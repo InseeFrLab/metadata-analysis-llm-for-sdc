@@ -17,11 +17,10 @@ reply already contains a valid JSON array (the prompt's "Aucune question." auto-
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import read_input, extract_json, json_to_table, llm_client
+from . import read_input, extract_json, json_to_table, llm_client, jsonio
 
 PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "prompt_questions.md"
 
@@ -50,14 +49,8 @@ def _records_if_valid(reply: str):
     Used to tell apart the two Phase-1 outcomes: a valid array means the model found no
     questions and auto-continued to the JSON; anything else means it asked questions.
     """
-    start, end = reply.find("["), reply.rfind("]")
-    if start == -1 or end == -1 or end < start:
-        return None
-    try:
-        records = json.loads(reply[start: end + 1])
-    except json.JSONDecodeError:
-        return None
-    if not isinstance(records, list) or extract_json.validate(records):
+    records = jsonio.try_extract_array(reply)
+    if records is None or extract_json.validate(records):
         return None
     return records
 

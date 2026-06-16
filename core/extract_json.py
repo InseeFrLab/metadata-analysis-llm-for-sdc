@@ -25,19 +25,21 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
+try:  # works whether run as a module or as `python3 core/extract_json.py`
+    from core import jsonio
+except ImportError:  # pragma: no cover - direct-execution fallback
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from core import jsonio
+
+# Re-exported for back-compat: callers that imported extract_json.slice_array
+# keep working; the implementation now lives in core/jsonio.py.
+slice_array = jsonio.slice_array
+
 SCHEMA_PATH = (
     Path(__file__).parent / "schema" / "sdc_output.schema.json"
     if (Path(__file__).parent / "schema").exists()
     else Path(__file__).parent.parent / "schema" / "sdc_output.schema.json"
 )
-
-
-def slice_array(text):
-    """Return the substring from the first '[' to the last ']' (inclusive)."""
-    start, end = text.find("["), text.rfind("]")
-    if start == -1 or end == -1 or end < start:
-        raise ValueError("No JSON array found in the reply (no '[' ... ']').")
-    return text[start: end + 1]
 
 
 def load_schema():
@@ -54,19 +56,25 @@ def validate(records, schema=None):
     return errors
 
 
-def load_and_validate(path):
-    """Parse + validate a reply file. Raises ValueError on any problem.
+def records_from_text(text):
+    """Slice the JSON array out of a reply string, parse it, and schema-validate it.
 
-    Returns the list of record dicts. Used by run_pipeline.py.
+    Raises ValueError on any problem (no array, malformed JSON, not a list, or a
+    schema violation). This is the one entry point the offline CLI path uses.
     """
-    text = Path(path).read_text(encoding="utf-8")
-    records = json.loads(slice_array(text))
-    if not isinstance(records, list):
-        raise ValueError(f"Expected a JSON array, got {type(records).__name__}.")
+    records = jsonio.extract_array(text)
     errors = validate(records)
     if errors:
         raise ValueError("Schema validation failed:\n" + "\n".join(errors))
     return records
+
+
+def load_and_validate(path):
+    """Parse + validate a reply file. Raises ValueError on any problem.
+
+    Returns the list of record dicts.
+    """
+    return records_from_text(Path(path).read_text(encoding="utf-8"))
 
 
 def main(argv=None):
@@ -77,13 +85,9 @@ def main(argv=None):
 
     text = Path(args.input).read_text(encoding="utf-8")
     try:
-        records = json.loads(slice_array(text))
-    except (ValueError, json.JSONDecodeError) as exc:
+        records = jsonio.extract_array(text)  # json.JSONDecodeError is a ValueError
+    except ValueError as exc:
         print(f"FAIL: could not parse a JSON array from {args.input}\n  {exc}")
-        return 1
-
-    if not isinstance(records, list):
-        print(f"FAIL: expected a JSON array, got {type(records).__name__}.")
         return 1
 
     errors = validate(records)

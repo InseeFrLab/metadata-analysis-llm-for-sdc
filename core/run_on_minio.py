@@ -17,7 +17,11 @@ from pathlib import Path
 
 import s3fs
 
-from table_to_md import convert
+# Add the repo root to the path so `core` imports resolve regardless of CWD
+# (mirrors run_full_pipeline_on_minio.py).
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from core.table_to_md import convert  # noqa: E402
 
 
 def main(input_s3: str, output_s3: str) -> None:

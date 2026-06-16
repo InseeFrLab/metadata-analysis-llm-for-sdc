@@ -45,9 +45,14 @@ Usage:
 
 import argparse
 import csv
-import json
 import sys
 from pathlib import Path
+
+try:  # works whether imported as a module or run as `python3 core/json_to_table.py`
+    from core import jsonio
+except ImportError:  # pragma: no cover - direct-execution fallback
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from core import jsonio
 
 BASE_VALUE_COLS = ["field", "indicator"]  # value cols that carry a paired hrc col
 
@@ -58,16 +63,11 @@ def load_records(path):
     """Read the JSON array produced by the LLM (tolerates trailing reflection text).
 
     The prompt tells the model to print plain-text reflection after the closing
-    `]`, so we slice to the outermost array before parsing.
+    `]`, so we slice to the outermost array before parsing. Schema validation is
+    deliberately not done here — it happens upstream in extract_json — so the CSV
+    path stays free of the jsonschema dependency.
     """
-    text = Path(path).read_text(encoding="utf-8")
-    start, end = text.find("["), text.rfind("]")
-    if start == -1 or end == -1 or end < start:
-        raise ValueError(f"No JSON array found in {path}")
-    records = json.loads(text[start: end + 1])
-    if not isinstance(records, list):
-        raise ValueError(f"{path}: expected a JSON array, got {type(records).__name__}")
-    return records
+    return jsonio.extract_array(Path(path).read_text(encoding="utf-8"))
 
 
 def _indicator(rec):

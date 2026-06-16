@@ -13,7 +13,6 @@ CSV) is testable on any machine — e.g. this Mac, which has no access to the mo
 """
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -23,15 +22,7 @@ from core import pipeline, extract_json, json_to_table  # noqa: E402
 
 def _records_from_reply(path: Path) -> list:
     """Slice + validate a JSON array out of a saved model reply (offline path)."""
-    text = path.read_text(encoding="utf-8")
-    start, end = text.find("["), text.rfind("]")
-    if start == -1 or end == -1 or end < start:
-        raise ValueError(f"No JSON array found in {path}")
-    records = json.loads(text[start: end + 1])
-    errors = extract_json.validate(records)
-    if errors:
-        raise ValueError("Schema validation failed:\n" + "\n".join(errors))
-    return records
+    return extract_json.records_from_text(path.read_text(encoding="utf-8"))
 
 
 def _read_multiline() -> str:

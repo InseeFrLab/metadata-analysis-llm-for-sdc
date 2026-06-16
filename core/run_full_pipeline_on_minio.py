@@ -14,8 +14,8 @@ Example:
       jawadmallat/analyse_LLM_metadata/output/sujets_analyse_demande_2.csv
 
 Requires:
-  - prem_code/core/pipeline.py (the orchestrator)
-  - prem_code/core/read_input.py (ODS → Markdown)
+  - core/pipeline.py (the orchestrator)
+  - core/read_input.py (ODS → Markdown)
   - API Key set in .env or env vars
 """
 
@@ -25,7 +25,7 @@ from pathlib import Path
 
 import s3fs
 
-# Add prem_code to path so we can import the pipeline
+# Add the repo root to the path so we can import the `core` package
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core import pipeline    # noqa: E402
