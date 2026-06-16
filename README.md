@@ -46,8 +46,7 @@ Même JSON en entrée → tables identiques en sortie : le tableau remis à rtau
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt            # exécution
-pip install -r requirements-dev.txt        # + pytest pour les tests
+pip install -r requirements.txt
 ```
 
 Les versions sont épinglées (`==`) pour la reproductibilité. Les étapes déterministes
@@ -104,40 +103,13 @@ en garder une copie locale, deux options :
 - ou exécuter le pipeline local `python cli.py meta.ods -o out/run1`, qui écrit directement
   `out/run1.csv` sur le disque.
 
----
-
-## Tests
-
-Le suite de tests s'exécute **entièrement hors-ligne** : aucun appel au modèle, aucune clé. Elle
-couvre les étapes déterministes (sérialisation, validation de schéma, JSON→CSV, CLI hors-ligne) et
-verrouille l'unification du sérialiseur.
-
-```bash
-pytest -q
-```
-
-### Bonne pratique : que faut-il sauvegarder comme test ?
-
-L'appel au LLM est le **seul** maillon non déterministe ; il n'a donc pas sa place dans la suite de
-tests. On versionne ce qui l'entoure et on teste le reste hors-ligne. Un cas de test = trois
-fichiers (voir `tests/fixtures/`) :
-
-1. **une petite entrée** (`sample_metadata.csv` — texte brut, diff-able, pas de binaire) ;
-2. **une réponse modèle capturée** (`sample_reply.txt` : le tableau JSON + la réflexion) — fige une
-   sortie réelle pour rejouer le chemin déterministe à l'identique, indéfiniment ;
-3. **la sortie attendue** (`expected_output.csv`, le « golden »).
-
-Pour transformer un run réel en test de non-régression : copiez la réponse du modèle dans
-`reply.txt`, lancez `python cli.py --reply reply.txt -o out`, relisez le CSV, puis versionnez
-`reply.txt` + `out.csv` comme nouveau fixture.
-
----
+--- 
 
 ## Reproductibilité
 
 - **Déterministe de bout en bout sauf l'appel modèle** : même Markdown/JSON en entrée → mêmes
   fichiers en sortie, octet pour octet.
-- **Dépendances épinglées** (`requirements.txt`, `requirements-dev.txt`).
+- **Dépendances épinglées** (`requirements.txt`).
 - **`temperature=0`** côté modèle pour minimiser (sans l'éliminer) la variabilité.
 - La prévisualisation MinIO (`table_to_md.convert`) utilise désormais **le même** sérialiseur que
   le pipeline : ce que vous prévisualisez est exactement ce que le modèle reçoit.
