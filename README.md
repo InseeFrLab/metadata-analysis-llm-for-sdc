@@ -60,7 +60,6 @@ Créez un `.env` (non versionné) à la racine :
 ```dotenv
 CLE_API_OPENWEBUI=...           # ou OPENAI_API_KEY=...
 # LLM_MODEL=qwen3-6-35b-moe     # facultatif
-# LLM_BASE_URL=https://llm.lab.sspcloud.fr/api/v1
 ```
 
 ---
@@ -108,17 +107,8 @@ en garder une copie locale, deux options :
 ## Reproductibilité
 
 - **Déterministe de bout en bout sauf l'appel modèle** : même Markdown/JSON en entrée → mêmes
-  fichiers en sortie, octet pour octet.
+  fichiers en sortie.
 - **Dépendances épinglées** (`requirements.txt`).
 - **`temperature=0`** côté modèle pour minimiser (sans l'éliminer) la variabilité.
 - La prévisualisation MinIO (`table_to_md.convert`) utilise désormais **le même** sérialiseur que
   le pipeline : ce que vous prévisualisez est exactement ce que le modèle reçoit.
-
-## Limitations connues
-
-- **Jeton « pas de hiérarchie » du `.rds`** : la valeur exacte attendue par rtauargus reste à
-  confirmer avec l'encadrant (voir l'en-tête de `core/json_to_table.py`). Tant que ce n'est pas
-  tranché, le `.rds` écrit un `NA` R pour toute cellule manquante.
-- **`.xls` hérité** non supporté par le sérialiseur stdlib : ré-enregistrez en `.xlsx`/`.ods`/`.csv`.
-- Les sous-totaux personnalisés d'une variable de croisement (ex. `D_to_H = D+E+F+G+H`) ne rentrent
-  pas dans le schéma à six clés et sont signalés dans la note d'incertitude, pas encodés.
