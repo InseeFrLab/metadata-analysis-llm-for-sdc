@@ -92,8 +92,8 @@ python core/run_on_minio.py user/data/meta.ods user/data/meta.md
 
 # Pipeline complet, S3 → S3 :
 python core/run_full_pipeline_on_minio.py \
-  user/analyse_LLM_metadata/data_tables/sujets.ods \
-  user/analyse_LLM_metadata/output/sujets.csv
+  user/[your_file_path_here]/example.ods \  # stockage des métadonnéees sur onyxia
+  user/[your_file_output_path_here]/example.csv ## Stockage des fichiers output sur onyxia
 ```
 
 **Sauvegarder le résultat en local.** `run_full_pipeline_on_minio.py` réécrit le CSV sur S3. Pour

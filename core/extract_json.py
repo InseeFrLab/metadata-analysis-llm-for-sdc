@@ -19,6 +19,7 @@ Usage:
 """
 
 import argparse
+import re
 import json
 import sys
 from pathlib import Path
@@ -54,6 +55,11 @@ def validate(records, schema=None):
         loc = "/".join(str(p) for p in err.path) or "(root)"
         errors.append(f"  at {loc}: {err.message}")
     return errors
+
+
+def expected_table_ids(metadata_md: str) -> set:
+    """Extract T<n> table ids from the first column of the serialized markdown."""
+    return set(re.findall(r'\|\s*\|', metadata_md, re.MULTILINE))
 
 
 def records_from_text(text):

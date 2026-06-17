@@ -91,6 +91,12 @@ def main(argv=None) -> int:
         answers = _read_multiline()
         records = pipeline.answer(r.history, answers)
 
+    expected = extract_json.expected_table_ids(md)
+    if expected:
+        missing = sorted(expected - {r["table_name"] for r in records})
+        if missing:
+            print(f"WARNING: {len(missing)} table(s) missing from JSON: {', '.join(missing)}")
+
     cols, rows = pipeline.to_csv(records, base)
     print(f"\nWrote {base.with_suffix('.csv')}  ({len(rows)} rows x {len(cols)} cols)")
     return 0
