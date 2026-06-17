@@ -14,7 +14,7 @@
 jsonschema==4.26.0    # core/extract_json.py: validate the LLM JSON (needs >=4.20 for Draft 2020-12)
 
 # --- model stage (live calls only; not exercised by the offline test suite) ---
-openai==1.51.0        # core/llm_client.py: Qwen on SSP Cloud (OpenAI-compatible); needs >=1.0
+openai==2.42.0        # core/llm_client.py: Qwen on SSP Cloud (OpenAI-compatible); needs >=1.0
 python-dotenv==1.0.1  # core/llm_client.py: load a local .env for the API key; needs >=1.0
 
 # --- input serialization (only for .xlsx workbooks; .ods/.csv need nothing) ---
