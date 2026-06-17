@@ -1,0 +1,10 @@
+# Extra dependencies for the presentation notebook (notebooks/demo_pipeline.ipynb).
+# The notebook runs in "cached" mode: it never calls the model or MinIO, so it
+# needs neither openai nor s3fs — only Jupyter to run and pandas to display the CSV.
+#
+# Install (on top of requirements.txt):
+#   pip install -r requirements-notebook.txt
+
+jupyter==1.1.1        # run the notebook (jupyter lab / nbconvert)
+ipykernel==6.29.5     # Python kernel for the notebook
+pandas==2.3.2         # pretty CSV display in the notebook (also used by the optional .rds path)

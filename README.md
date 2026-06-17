@@ -95,7 +95,7 @@ l'image Onyxia (au besoin : `pip install s3fs`).
 
 ---
 
-## Utilisation
+## Utilisation: ESSAYER EDGE SI FIREFOX NE MARCHE PAS
 
 > **Démo / présentation.** `notebooks/demo_pipeline.ipynb` déroule le pipeline de bout en bout
 > sur un exemple, en **mode caché** (aucune clé ni MinIO requis). Voir
