@@ -28,7 +28,7 @@ import s3fs
 # Add the repo root to the path so we can import the `core` package
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core import pipeline    # noqa: E402
+from core import pipeline, extract_json    # noqa: E402
 
 
 def main(input_s3: str, output_s3: str) -> None:
@@ -62,6 +62,12 @@ def main(input_s3: str, output_s3: str) -> None:
         answers = _read_multiline()
         print("\n🤖 Phase 2: sending answers to Qwen ...")
         records = pipeline.answer(r.history, answers)
+
+    expected = extract_json.expected_table_ids(md)
+    if expected:
+        missing = sorted(expected - {r["table_name"] for r in records})
+        if missing:
+            print(f"WARNING: {len(missing)} table(s) missing from JSON: {', '.join(missing)}")
 
     # Write CSV to MinIO
     print(f"↑ Writing to {output_s3} ...")
