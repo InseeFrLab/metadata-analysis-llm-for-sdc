@@ -59,7 +59,7 @@ def validate(records, schema=None):
 
 def expected_table_ids(metadata_md: str) -> set:
     """Extract T<n> table ids from the first column of the serialized markdown."""
-    return set(re.findall(r'\|\s*\|', metadata_md, re.MULTILINE))
+    return set(re.findall(r'^\|\s*(T\d+)\s*\|', metadata_md, re.MULTILINE))
 
 
 def records_from_text(text):
