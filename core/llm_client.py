@@ -62,6 +62,7 @@ def chat(messages, *, model=None, base_url=None, temperature=0.0, max_tokens=320
         messages=messages,
     )
     content = resp.choices[0].message.content
+
     if content is None:
         raise RuntimeError(
             "Model returned empty content (message.content is None). "

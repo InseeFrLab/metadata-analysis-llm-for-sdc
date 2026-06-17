@@ -43,22 +43,41 @@ def wrap(markdown: str) -> str:
 
 # --- reply classification --------------------------------------------------
 
-def _records_if_valid(reply: str):
-    """Return validated records if `reply` carries a valid JSON array, else None.
+_SENTINEL = "Aucune question."
 
-    Used to tell apart the two Phase-1 outcomes: a valid array means the model found no
-    questions and auto-continued to the JSON; anything else means it asked questions.
+
+def _split_phase1(reply: str):
+    """Split on the '---' separator the prompt requires.
+
+    Returns (notes, after_sep) when the separator is present, else (reply, None).
     """
-    records = jsonio.try_extract_array(reply)
-    if records is None or extract_json.validate(records):
+    parts = reply.split("\n---", 1)
+    if len(parts) == 2:
+        return parts[0], parts[1].strip()
+    return reply, None
+
+
+def _records_if_valid(reply: str):
+    """Return validated records only when the model explicitly auto-continued.
+
+    Phase-1 routing: requires the literal sentinel 'Aucune question.' to appear
+    immediately after the '---' separator before attempting any JSON extraction.
+    This prevents a JSON draft inside the model's reasoning notes from being
+    mistaken for the final auto-continued output.
+    """
+    _, after = _split_phase1(reply)
+    if after is None or not after.startswith(_SENTINEL):
+        return None
+    records = jsonio.try_extract_array(after)
+    if records is None or not records or extract_json.validate(records):
         return None
     return records
 
 
 def _questions_text(reply: str) -> str:
     """The final question list — everything after the first '---' separator."""
-    parts = reply.split("\n---", 1)
-    return (parts[1] if len(parts) > 1 else reply).strip()
+    _, after = _split_phase1(reply)
+    return (after if after is not None else reply).strip()
 
 
 # --- phases ----------------------------------------------------------------
@@ -97,8 +116,9 @@ def answer(history: list, answers_text: str, **llm_kwargs) -> list:
     reply = llm_client.chat(history, **llm_kwargs)
     history.append({"role": "assistant", "content": reply})
 
-    records = _records_if_valid(reply)
-    if records is None:
+    # Phase 2 has no sentinel — the model emits JSON directly. Scan the full reply.
+    records = jsonio.try_extract_array(reply)
+    if records is None or extract_json.validate(records):
         raise ValueError("Phase 2 reply did not contain a valid JSON array:\n\n" + reply)
     return records
 

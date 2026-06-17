@@ -64,7 +64,42 @@ CLE_API_OPENWEBUI=...           # ou OPENAI_API_KEY=...
 
 ---
 
+## Mise en place sur Onyxia
+
+Pour utiliser ce dépôt sur **Onyxia / SSP Cloud** :
+
+1. Lancer un service **VSCode-python**.
+2. Dans les paramètres du service, onglet **« Git »** → renseigner l'URL du dépôt dans
+   **« Repository URL »** :
+   `https://github.com/InseeFrLab/metadata-analysis-llm-for-sdc.git`
+3. Onglet **« Environment variables »** → **« Ajouter »** une variable nommée **exactement
+   `CLE_API_OPENWEBUI`** , et y coller la valeur de la clé API.
+   > ⚠️ Un nom différent (`CLE_API_OPENWEB`, etc.) provoque l'erreur *« No API key found »*.
+   > `OPENAI_API_KEY` est aussi accepté comme nom alternatif.
+4. Une fois le service lancé, ouvrir un terminal dans VSCode et installer les dépendances :
+   ```bash
+   pip install -r requirements.txt
+   ```
+5. Le service est prêt — lancez le pipeline (voir **Utilisation** ci-dessous).
+
+**URL du modèle — rien à changer.** Par défaut, `core/llm_client.py` pointe déjà vers la passerelle
+LLM de SSP Cloud (`https://llm.lab.sspcloud.fr/api/v1`), soit exactement l'endpoint d'Onyxia. Pour
+surcharger sans toucher au code (par ex. si le nom du modèle `qwen3-6-35b-moe` change), définissez
+les variables d'environnement `LLM_BASE_URL` et/ou `LLM_MODEL`. Il faut bien évidemment changer le nom du modèle
+au modèle utilisé.
+
+**S3 / MinIO.** Onyxia injecte automatiquement les identifiants S3 (`AWS_S3_ENDPOINT`,
+`AWS_ACCESS_KEY_ID`, …) : rien à configurer pour les scripts `core/run_*_on_minio.py`. Ces scripts
+requièrent `s3fs`, qui n'est pas dans `requirements.txt` ; il est généralement pré-installé sur
+l'image Onyxia (au besoin : `pip install s3fs`).
+
+---
+
 ## Utilisation
+
+> **Démo / présentation.** `notebooks/demo_pipeline.ipynb` déroule le pipeline de bout en bout
+> sur un exemple, en **mode caché** (aucune clé ni MinIO requis). Voir
+> `notebooks/cached/README.md`. Dépendances : `pip install -r requirements-notebook.txt`.
 
 ### Hors-ligne (aucune clé, aucune modèle)
 
