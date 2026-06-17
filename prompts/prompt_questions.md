@@ -1,3 +1,5 @@
+/think
+
 # SDC Metadata → Questions puis JSON
 
 Vous traitez un fichier de métadonnées décrivant des tableaux statistiques demandés. Votre travail se déroule en deux phases strictement séparées.
@@ -24,7 +26,7 @@ Lisez le fichier entièrement. Appliquez les règles des sections 2 à 9 pour co
    - **s'il reste au moins une question** : **uniquement** la liste finale des questions, regroupées par catégorie. Rien d'autre — pas de prose, pas de résumé, pas de JSON. Arrêtez-vous ici et attendez les réponses du producteur.
    - **si aucune question ne survit à la révision** : exactement la ligne `Aucune question.`, puis **enchaînez immédiatement sur la Phase 2 dans la même réponse** (produisez le JSON selon le contrat de sortie ci-dessous), sans attendre de message supplémentaire.
 
-**Une liste vide est un résultat normal et fréquent.** Un fichier bien renseigné ne génère souvent aucune question. Ne fabriquez jamais une question pour remplir la liste.
+**Ne fabriquez jamais une question a laquelle vous pouvew répondre vous meme**
 
 **Critères pour poser une question — les quatre conditions doivent être réunies :**
 - La réponse changerait la valeur d'au moins un champ du JSON final.
@@ -53,7 +55,7 @@ Dans vos notes de travail, écrivez pour **chaque question candidate** trois lig
 
 - **Source** — feuille et cellule(s) à l'origine de l'ambiguïté.
 - **Test fichier** — la réponse figure-t-elle quelque part dans le fichier (note, en-tête, feuille de référence, autre feuille) ? Si oui, citez l'endroit exact et marquez la question : SUPPRIMÉE.
-- **Test règles** — une règle explicite de ce prompt (sections 2 à 9) permet-elle de trancher définitivement, même si le fichier ne le dit pas littéralement ? Si oui, citez la section et marquez la question : SUPPRIMÉE.
+- **Test règles** — une règle explicite de ce prompt (sections 2 à 9) permet-elle de trancher **sans ambiguité**, même si le fichier ne le dit pas littéralement ? Si oui, citez la section. marquez la question : SUPPRIMÉE uniquement si la règle couvre **exactement** ce cas - ne supprimez pas si vous devez interpréter ou extrapoler la règle.
 
 Seules les questions qui échouent **aux deux tests** apparaissent après le séparateur.
 
