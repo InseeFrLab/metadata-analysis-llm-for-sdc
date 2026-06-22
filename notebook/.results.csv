@@ -1,0 +1,3 @@
+filename,timestamp,total_wrong_cells,n_tables_ref,n_tables_out,n_tables_diff,table_name,field,hrc_field,indicator,hrc_indicator,spanning,hrc_spanning,missing_from_output,extra_in_output
+sujets_analyse_demande_1.ods,2026-06-22T14:03:09Z,54,26,26,0,0,0,26,0,8,0,20,0,0
+sujets_analyse_demande_1.ods,2026-06-22T14:15:56Z,0,26,26,0,0,0,0,0,0,0,0,0,0
