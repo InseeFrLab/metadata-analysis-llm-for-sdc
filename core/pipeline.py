@@ -64,9 +64,18 @@ def _records_if_valid(reply: str):
     immediately after the '---' separator before attempting any JSON extraction.
     This prevents a JSON draft inside the model's reasoning notes from being
     mistaken for the final auto-continued output.
+
+    Fallback: if the model skipped the '---' separator and the reply starts
+    directly with the sentinel, treat it as auto-continued anyway.
     """
     _, after = _split_phase1(reply)
-    if after is None or not after.startswith(_SENTINEL):
+    if after is None:
+        stripped = reply.strip()
+        if stripped.startswith(_SENTINEL):
+            after = stripped
+        else:
+            return None
+    if not after.startswith(_SENTINEL):
         return None
     records = jsonio.try_extract_array(after)
     if records is None or not records or extract_json.validate(records):
