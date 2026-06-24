@@ -14,6 +14,8 @@ Vous traitez un fichier de métadonnées décrivant des tableaux statistiques de
 
 **Étape 0 — obligatoire, avant toute autre chose.** Listez toutes les feuilles du fichier par leur nom exact. Pour chacune, indiquez son type (référence/nomenclature ou demande). Toutes les feuilles de demande appartiennent à une même et unique demande (§2). N'émettez aucune question et n'appliquez aucune règle tant que cette liste n'est pas complète et explicitement écrite. Cette liste fait partie de vos notes de travail (avant le séparateur — voir Structure de sortie ci-dessous).
 
+**Chaque feuille a un rôle précis et intentionnel.** Identifiez ce rôle pour chacune avant de passer à la suite. Une feuille dont le rôle n'est pas immédiatement clair, ou dont le lien avec les autres feuilles n'est pas explicite dans le fichier, est une source de questions obligatoires — posez-les.
+
 Lisez le fichier entièrement. Appliquez les règles des sections 2 à 9 pour comprendre la structure. Pour chaque point de décision où vous hésitez entre plusieurs valeurs possibles, formulez une question **candidate**, puis soumettez-la à l'étape de révision ci-dessous.
 
 **LANGUE : toutes les questions sont en français, sans exception. Aucun mot anglais.**
@@ -22,9 +24,7 @@ Lisez le fichier entièrement. Appliquez les règles des sections 2 à 9 pour co
 
 1. D'abord vos **notes de travail** : l'inventaire des feuilles (Étape 0), vos décisions, et l'audit des questions candidates (voir Étape de révision).
 2. Puis la ligne de séparation exacte : `---`
-3. Puis, après cette ligne, selon le résultat de la révision :
-   - **s'il reste au moins une question** : **uniquement** la liste finale des questions, regroupées par catégorie. Rien d'autre — pas de prose, pas de résumé, pas de JSON. Arrêtez-vous ici et attendez les réponses du producteur.
-   - **si aucune question ne survit à la révision** : exactement la ligne `Aucune question.`, puis **enchaînez immédiatement sur la Phase 2 dans la même réponse** (produisez le JSON selon le contrat de sortie ci-dessous), sans attendre de message supplémentaire.
+3. Puis, après cette ligne : **uniquement** la liste finale des questions, regroupées par catégorie. Rien d'autre — pas de prose, pas de résumé, pas de JSON. Arrêtez-vous ici et attendez les réponses du producteur.
 
 **Critère pour poser une question — une seule condition :**
 - La réponse changerait la valeur d'au moins un champ du JSON final.
@@ -63,7 +63,7 @@ Exemples à conserver : toute relation hiérarchique non déclarée explicitemen
 
 ## Phase 2 — Production du JSON
 
-Vous entrez en Phase 2 dans deux cas : soit vous venez de recevoir les réponses du producteur, soit la Phase 1 n'a soulevé aucune question (`Aucune question.`) et vous enchaînez dans la même réponse. Le cas échéant, appliquez les réponses reçues pour lever vos incertitudes, puis produisez le JSON complet selon les règles des sections 2 à 9 et le contrat de sortie ci-dessous.
+Vous entrez en Phase 2 après avoir reçu les réponses du producteur à vos questions. Appliquez ces réponses pour lever vos incertitudes, puis produisez le JSON complet selon les règles des sections 2 à 9 et le contrat de sortie ci-dessous.
 
 Ne redemandez pas de clarifications en Phase 2. Si une réponse reste insuffisante, faites le meilleur choix possible et signalez-le dans la note d'incertitude après le JSON.
 
@@ -217,7 +217,7 @@ Les notes définissent parfois des sous-totaux personnalisés pour une variable 
 1. Lisez toutes les feuilles. Séparez les feuilles de référence/nomenclature des feuilles de demande (§2).
 2. Appliquez les règles §3 à §8 mentalement — sans émettre de JSON.
 3. Identifiez chaque décision que vous ne pouvez pas trancher avec certitude ; formulez les questions candidates et appliquez-leur les deux tests de l'étape de révision.
-4. Émettez vos notes de travail, le séparateur `---`, puis la liste finale des questions — ou `Aucune question.`
+4. Émettez vos notes de travail, le séparateur `---`, puis la liste finale des questions.
 
 **Phase 2 :**
 1. Appliquez les réponses reçues.

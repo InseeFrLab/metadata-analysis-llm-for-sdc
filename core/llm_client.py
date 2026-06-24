@@ -61,7 +61,16 @@ def chat(messages, *, model=None, base_url=None, temperature=0.0, max_tokens=100
         max_tokens=max_tokens,
         messages=messages,
     )
-    content = resp.choices[0].message.content
+    choice = resp.choices[0]
+    content = choice.message.content
+
+    # A reply cut off at the token cap is incomplete — its JSON array would fail
+    # validation downstream with a confusing parse error. Fail loud and point at the cause.
+    if getattr(choice, "finish_reason", None) == "length":
+        raise RuntimeError(
+            f"Model output was truncated at the token cap (max_tokens={max_tokens}, "
+            "finish_reason='length'). The reply is incomplete; raise max_tokens and retry."
+        )
 
     if content is None:
         raise RuntimeError(

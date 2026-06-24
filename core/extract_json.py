@@ -6,8 +6,8 @@ Pipeline position:
     LLM reply --> [THIS SCRIPT] --> validated JSON array --> json_to_table.py
 
 The model is told to print the JSON array first (starting `[`, ending `]`) and
-then a plain-text reflection ending with `WAITING FOR CORRECTION`. This script
-slices to the outermost array, parses it, and validates it against
+then a short plain-text note on residual uncertainty (per prompt_questions.md).
+This script slices to the outermost array, parses it, and validates it against
 schema/sdc_output.schema.json. It FAILS LOUD: any malformed output (missing
 keys, wrong types, the token "NA" where null is required, unexpected keys) is
 reported and the script exits non-zero, so a bad LLM reply never reaches the

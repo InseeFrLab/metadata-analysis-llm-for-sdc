@@ -13,6 +13,7 @@ Credentials are automatically injected by Onyxia as environment variables.
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 import s3fs
@@ -29,9 +30,13 @@ def main(input_s3: str, output_s3: str) -> None:
         client_kwargs={"endpoint_url": "https://" + os.environ["AWS_S3_ENDPOINT"]}
     )
 
-    # Infer a local temp name that preserves the extension (needed by convert())
+    # Unique temp dir so concurrent runs never clobber each other's input file.
+    # Contains only: input.<ext> (downloaded from S3). The Markdown output goes
+    # directly to S3 without touching disk. Not cleaned up automatically.
     suffix = Path(input_s3).suffix
-    tmp = Path(f"/tmp/input{suffix}")
+    workdir = Path(tempfile.mkdtemp(prefix="sdc_minio_"))
+    print(f"Working directory: {workdir}")
+    tmp = workdir / f"input{suffix}"
 
     # Download from MinIO
     print(f"↓ Downloading {input_s3} ...")

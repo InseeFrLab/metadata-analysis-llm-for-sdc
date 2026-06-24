@@ -1,6 +1,8 @@
-# Extra dependencies for the presentation notebook (notebooks/demo_pipeline.ipynb).
-# The notebook runs in "cached" mode: it never calls the model or MinIO, so it
-# needs neither openai nor s3fs — only Jupyter to run and pandas to display the CSV.
+# Extra dependencies for the presentation notebook (notebook/demo_pipeline_for_minio.ipynb).
+# That notebook runs the full pipeline live on Onyxia: it calls the model and reads/writes
+# MinIO, so it also needs `openai` (from requirements.txt) and `s3fs` (pre-installed on the
+# Onyxia image; otherwise `pip install s3fs`). This file only adds the Jupyter tooling and
+# pandas on top.
 #
 # Install (on top of requirements.txt):
 #   pip install -r requirements-notebook.txt

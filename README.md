@@ -95,11 +95,12 @@ l'image Onyxia (au besoin : `pip install s3fs`).
 
 ---
 
-## Utilisation: ESSAYER EDGE SI FIREFOX NE MARCHE PAS
+## Utilisation
 
-> **Démo / présentation.** `notebooks/demo_pipeline.ipynb` déroule le pipeline de bout en bout
-> sur un exemple, en **mode caché** (aucune clé ni MinIO requis). Voir
-> `notebooks/cached/README.md`. Dépendances : `pip install -r requirements-notebook.txt`.
+> **Démo / présentation.** `notebook/demo_pipeline_for_minio.ipynb` déroule le pipeline de bout
+> en bout sur un exemple, en conditions réelles sur Onyxia (appel au modèle + lecture/écriture
+> MinIO) : la clé API et l'accès S3 sont donc requis (voir ci-dessous). Dépendances :
+> `pip install -r requirements-notebook.txt`.
 
 ### Hors-ligne (aucune clé, aucune modèle)
 

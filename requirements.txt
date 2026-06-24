@@ -23,3 +23,6 @@ openpyxl==3.1.5       # core/read_input.py: read .xlsx sheets; needs >=3.1
 # --- optional: only if you also want the rtauargus .rds (off the producer path) ---
 # pandas==2.3.2        # needs >=2.0
 # pyreadr==0.5.2       # needs >=0.5
+
+# --- dev: offline test suite under tests/ (no API key or network needed) ---
+pytest==8.3.4         # run from the repo root:  pytest -q

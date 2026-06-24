@@ -78,7 +78,9 @@ def _records_if_valid(reply: str):
     if not after.startswith(_SENTINEL):
         return None
     records = jsonio.try_extract_array(after)
-    if records is None or not records or extract_json.validate(records):
+    if not records:  # None (no array) or empty list
+        return None
+    if extract_json.validate(records):  # non-empty error list => invalid, treat as "not auto-continued"
         return None
     return records
 
@@ -127,8 +129,11 @@ def answer(history: list, answers_text: str, **llm_kwargs) -> list:
 
     # Phase 2 has no sentinel — the model emits JSON directly. Scan the full reply.
     records = jsonio.try_extract_array(reply)
-    if records is None or extract_json.validate(records):
-        raise ValueError("Phase 2 reply did not contain a valid JSON array:\n\n" + reply)
+    if records is None:
+        raise ValueError("Phase 2 reply contained no JSON array:\n\n" + reply)
+    errors = extract_json.validate(records)
+    if errors:
+        raise ValueError("Phase 2 JSON failed schema validation:\n" + "\n".join(errors))
     return records
 
 

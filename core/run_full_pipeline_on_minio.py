@@ -21,6 +21,7 @@ Requires:
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 import s3fs
@@ -36,10 +37,17 @@ def main(input_s3: str, output_s3: str) -> None:
         client_kwargs={"endpoint_url": "https://" + os.environ["AWS_S3_ENDPOINT"]}
     )
 
+    # Unique temp dir so concurrent runs never clobber each other's files.
+    # Contains only: input.<ext> (downloaded from S3) and output.csv (before upload).
+    # The intermediate Markdown and JSON records stay in memory and are never written here.
+    # This directory is NOT cleaned up automatically — delete it manually if needed.
+    workdir = Path(tempfile.mkdtemp(prefix="sdc_pipeline_"))
+    print(f"Working directory: {workdir}")
+
     # Download ODS from MinIO
     print(f"↓ Downloading {input_s3} ...")
     suffix = Path(input_s3).suffix
-    tmp_input = Path(f"/tmp/input{suffix}")
+    tmp_input = workdir / f"input{suffix}"
     with fs.open(input_s3, "rb") as f_in:
         tmp_input.write_bytes(f_in.read())
 
@@ -71,7 +79,7 @@ def main(input_s3: str, output_s3: str) -> None:
 
     # Write CSV to MinIO
     print(f"↑ Writing to {output_s3} ...")
-    tmp_output = Path("/tmp/output")
+    tmp_output = workdir / "output"
     pipeline.to_csv(records, tmp_output)
 
     with open(str(tmp_output) + ".csv", "r", encoding="utf-8") as f:
