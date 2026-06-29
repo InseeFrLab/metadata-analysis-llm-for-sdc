@@ -3,56 +3,26 @@
 
 Pipeline position:
 
-    ODS metadata --> LLM + prompt --> JSON --> [THIS SCRIPT] --> .csv + .rds --> rtauargus
+    ODS metadata --> LLM + prompt --> JSON --> [THIS MODULE] --> .csv + .rds --> rtauargus
                      (probabilistic)         (100% deterministic)
-
-The LLM stage is the only non-deterministic link. From the JSON onward everything
-is fixed code: the same JSON in produces byte-identical tables out, so the table
-handed to rtauargus is reproducible and auditable.
-
-Every run writes BOTH files from the same JSON:
-  * <name>.csv  -- for the human expert to review (NA-vs-blank convention below).
-  * <name>.rds  -- for rtauargus to consume (real R NA for every missing cell).
-
-The two files carry the same information; they differ only in how "missing" is
-rendered, because they have different readers:
-
-  NA-vs-blank convention (CSV, human-facing). Every value column is paired with
-  its hierarchy column -- (field, hrc_field), (indicator, hrc_indicator),
-  (spanning_i, hrc_spanning_i). For each pair:
-    * value PRESENT -> value cell = the value; hierarchy cell = its hrc code, or
-      the literal "NA" when there is no hierarchy (JSON null). Here "NA" means
-      "this attribute exists but has no hierarchy".
-    * value ABSENT  -> BOTH cells are left blank. A blank means the
-      attribute/dimension does not exist at all (e.g. no 2nd spanning dimension).
-  table_name has no hierarchy column: the value, or blank if missing.
-
-  RDS convention (rtauargus-facing). Values verbatim; every missing cell (both
-  "no hierarchy" and "absent dimension") becomes a real R NA. rtauargus only
-  needs the value cells filled and the hierarchy cells to be an hrc reference or
-  NA. NOTE: the exact token rtauargus expects for "no hierarchy" is still to be
-  confirmed with the supervisor; if it must differ from R NA, change write_rds.
-
-The nested `spanning_variables` array is flattened into spanning_1/hrc_spanning_1,
-spanning_2/hrc_spanning_2, ... up to the maximum number of spanning variables
-found in the input. There is NO cap.
-
 Usage:
-    python3 json_to_table.py input.json                 # -> input.csv + input.rds
-    python3 json_to_table.py input.json -o out/table    # -> out/table.csv + out/table.rds
-    python3 json_to_table.py input.json --stdout         # preview the CSV table only
+    python3 transform_output.py input.json                 # -> input.csv + input.rds
+    python3 transform_output.py input.json -o out/table    # -> out/table.csv + out/table.rds
+    python3 transform_output.py input.json --stdout         # preview the CSV table only
 """
 
 import argparse
 import csv
 import sys
+import pandas as pd
+import pyreadr
 from pathlib import Path
 
-try:  # works whether imported as a module or run as `python3 core/json_to_table.py`
-    from core import jsonio
+try:  # works whether imported as a module or run as `python3 core/transform_output.py`
+    from core import verify_json_output
 except ImportError:  # pragma: no cover - direct-execution fallback
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from core import jsonio
+    from core import verify_json_output
 
 BASE_VALUE_COLS = ["field", "indicator"]  # value cols that carry a paired hrc col
 
@@ -64,10 +34,10 @@ def load_records(path):
 
     The prompt tells the model to print plain-text reflection after the closing
     `]`, so we slice to the outermost array before parsing. Schema validation is
-    deliberately not done here — it happens upstream in extract_json — so the CSV
-    path stays free of the jsonschema dependency.
+    deliberately not done here — it happens upstream in verify_json_output — so the
+    CSV path stays free of the jsonschema dependency.
     """
-    return jsonio.extract_array(Path(path).read_text(encoding="utf-8"))
+    return verify_json_output.extract_array(Path(path).read_text(encoding="utf-8"))
 
 
 def _indicator(rec):
@@ -152,9 +122,6 @@ def write_rds(records, path):
     Lazy imports so the CSV path stays dependency-free where pandas/pyreadr are
     not installed.
     """
-    import pandas as pd
-    import pyreadr
-
     cols = header(records)
     n_span = max_spanning(records)
     data = []

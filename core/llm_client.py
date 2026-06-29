@@ -1,20 +1,5 @@
 #!/usr/bin/env python3
-"""Multi-turn LLM caller for the two-phase SDC pipeline (Qwen on SSP Cloud).
-
-Only the OpenAI-compatible path is kept — SSP Cloud's endpoint, like Grok and OpenAI,
-speaks the OpenAI chat API, and that is where Qwen is served. The model is stateless and
-has no memory/skills, so the caller resends the **whole** conversation every call,
-starting with the system prompt; nothing is remembered server-side.
-
-Config comes only from the environment, so keys never live in code:
-
-    LLM_MODEL      model name              (default: qwen3-6-35b-moe)
-    LLM_BASE_URL   endpoint                (default: SSP Cloud)
-    CLE_API_OPENWEBUI the key for the endpoint
-
-A local .env is loaded automatically if python-dotenv is installed.
-"""
-
+from openai import OpenAI
 import os
 
 DEFAULT_BASE_URL = "https://llm.lab.sspcloud.fr/api/v1"  # INSEE SSP Cloud
@@ -51,8 +36,6 @@ def chat(messages, *, model=None, base_url=None, temperature=0.0, max_tokens=100
          {"role": "user", "content": <metadata>}, ...]
     Temperature defaults to 0 for the most deterministic output the model allows.
     """
-    from openai import OpenAI  # lazy: deterministic stages never import this
-
     cfg = resolve_config(model, base_url)
     client = OpenAI(base_url=cfg["base_url"], api_key=cfg["api_key"])
     resp = client.chat.completions.create(
@@ -60,6 +43,7 @@ def chat(messages, *, model=None, base_url=None, temperature=0.0, max_tokens=100
         temperature=temperature,
         max_tokens=max_tokens,
         messages=messages,
+        extra_body={"chat_template_kwargs": {"enable_thinking": False}}
     )
     choice = resp.choices[0]
     content = choice.message.content

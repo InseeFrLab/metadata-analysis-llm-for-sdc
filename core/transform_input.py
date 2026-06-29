@@ -3,24 +3,11 @@
 
 Pipeline position:
 
-    metadata workbook --> [THIS SCRIPT] --> Markdown text --> prompt_v4 + call_llm.py
-
-Why this stage exists. The production model is undecided and may be a weaker
-self-hosted one. In testing, some models (e.g. Gemini) could not parse a *binary*
-.ods attachment at all. So we never hand the binary file to the LLM: we serialize
-the workbook to plain UTF-8 Markdown here, deterministically, and feed that text.
-
-What it preserves. Every sheet becomes its own Markdown table (sheet name as a
-heading), so the "table-definition" inputs (one requested table per row) and the
-"narrative-metadata" inputs (wide headers + long prose cells + a CEFF/legend
-sheet) both survive intact. Ragged rows are padded; trailing empty cells/rows and
-spreadsheet repeat-fillers are dropped; cell text is sanitized for Markdown.
-
-This is 100% deterministic: same workbook in -> identical Markdown out.
+    metadata workbook --> [THIS MODULE] --> Markdown text --> LLM prompt
 
 Usage:
-    python3 read_input.py metadata.ods                  # print Markdown to stdout
-    python3 read_input.py metadata.xlsx -o meta.md      # also write to a file
+    python3 transform_input.py metadata.ods                  # print Markdown to stdout
+    python3 transform_input.py metadata.xlsx -o meta.md      # also write to a file
 """
 
 import argparse
@@ -29,6 +16,7 @@ import io
 import sys
 import xml.etree.ElementTree as ET
 import zipfile
+import openpyxl
 from pathlib import Path
 
 # ODF (OpenDocument) namespaces. ODS stores the grid in content.xml.
@@ -98,9 +86,6 @@ def read_ods(path):
 
 
 def read_xlsx(path):
-    """Read every sheet of an .xlsx (lazy import: openpyxl only needed here)."""
-    import openpyxl  # noqa: F401  (lazy: keeps .ods/.csv paths dependency-free)
-
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
     sheets = []
     for ws in wb.worksheets:
@@ -174,7 +159,7 @@ def to_markdown(sheets, title=None):
 
 
 def serialize(path):
-    """Importable helper for run_pipeline: workbook path -> Markdown string."""
+    """Workbook path -> Markdown string (the canonical serializer for the pipeline)."""
     sheets = read_workbook(path)
     return to_markdown(sheets, title=Path(path).name)
 

@@ -220,5 +220,5 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# regular files
-.results.csv/
+# notebook
+notebook/

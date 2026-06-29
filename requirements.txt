@@ -20,9 +20,9 @@ python-dotenv==1.0.1  # core/llm_client.py: load a local .env for the API key; n
 # --- input serialization (only for .xlsx workbooks; .ods/.csv need nothing) ---
 openpyxl==3.1.5       # core/read_input.py: read .xlsx sheets; needs >=3.1
 
-# --- optional: only if you also want the rtauargus .rds (off the producer path) ---
-# pandas==2.3.2        # needs >=2.0
-# pyreadr==0.5.2       # needs >=0.5
+# --- S3 / MinIO (Onyxia) support ---
+s3fs==2024.2.0        # cli.py --s3: read/write on MinIO; needs >=2024.1; lawy import so local path not required
 
-# --- dev: offline test suite under tests/ (no API key or network needed) ---
-pytest==8.3.4         # run from the repo root:  pytest -q
+# --- optional: only if you also want the rtauargus .rds (off the producer path) ---
+pandas==2.3.2        # needs >=2.0
+pyreadr==0.5.2       # needs >=0.5

@@ -15,12 +15,12 @@ Un seul maillon est probabiliste (l'appel au LLM) ; tout le reste est détermini
 
 ```
 classeur (.ods/.xlsx/.csv)
-   → [read_input.serialize]        déterministe   → Markdown
+   → [transform_input.serialize]   déterministe   → Markdown
    → [LLM + prompts/prompt_questions.md]  PROBABILISTE  → JSON
         Phase 1 : questions au producteur (ou JSON direct si aucune question)
         Phase 2 : réponses → JSON final
-   → [extract_json.validate]       déterministe   → JSON validé contre le schéma
-   → [json_to_table.write_csv/rds] déterministe   → .csv (humain) + .rds (rtauargus)
+   → [verify_json_output.validate]  déterministe  → JSON validé contre le schéma
+   → [transform_output.write_csv/rds] déterministe → .csv (humain) + .rds (rtauargus)
 ```
 
 Même JSON en entrée → tables identiques en sortie : le tableau remis à rtauargus est reproductible.
@@ -29,16 +29,13 @@ Même JSON en entrée → tables identiques en sortie : le tableau remis à rtau
 
 | Module | Rôle |
 |---|---|
-| `read_input.py` | Classeur → Markdown. **Sérialiseur canonique** (stdlib pour `.ods`/`.csv`, openpyxl pour `.xlsx`). |
+| `transform_input.py` | Classeur → Markdown. **Sérialiseur canonique** (stdlib pour `.ods`/`.csv`, openpyxl pour `.xlsx`). |
 | `llm_client.py` | Appel multi-tour à Qwen sur SSP Cloud (API compatible OpenAI), `temperature=0`. |
 | `pipeline.py` | Orchestrateur en deux phases : `serialize → start → answer → to_csv`. |
-| `jsonio.py` | Découpe/parse le tableau JSON d'une réponse (`[ … ]`). Source unique, sans dépendance. |
-| `extract_json.py` | Validation du JSON contre `schema/sdc_output.schema.json` (échoue bruyamment). |
-| `json_to_table.py` | JSON validé → `.csv` (convention NA-vs-vide) + `.rds` (NA R). |
-| `table_to_md.py` | Wrapper de prévisualisation : délègue à `read_input.serialize` (même Markdown que le pipeline). |
-| `run_on_minio.py` / `run_full_pipeline_on_minio.py` | Variantes lisant/écrivant sur MinIO (Onyxia). |
+| `verify_json_output.py` | Découpe le tableau JSON d'une réponse (`[ … ]`) **et** le valide contre `schema/sdc_output.schema.json` (échoue bruyamment). |
+| `transform_output.py` | JSON validé → `.csv` (convention NA-vs-vide) + `.rds` (NA R). |
 
-`cli.py` (racine) est le pilote terminal.
+`cli.py` (racine) est le pilote terminal unique : fichiers locaux par défaut, ou Onyxia S3 avec `--s3`.
 
 ---
 
@@ -89,8 +86,8 @@ les variables d'environnement `LLM_BASE_URL` et/ou `LLM_MODEL`. Il faut bien év
 au modèle utilisé.
 
 **S3 / MinIO.** Onyxia injecte automatiquement les identifiants S3 (`AWS_S3_ENDPOINT`,
-`AWS_ACCESS_KEY_ID`, …) : rien à configurer pour les scripts `core/run_*_on_minio.py`. Ces scripts
-requièrent `s3fs`, qui n'est pas dans `requirements.txt` ; il est généralement pré-installé sur
+`AWS_ACCESS_KEY_ID`, …) : rien à configurer pour le drapeau `--s3` de `cli.py`. Ce mode
+requiert `s3fs`, qui n'est pas dans `requirements.txt` ; il est généralement pré-installé sur
 l'image Onyxia (au besoin : `pip install s3fs`).
 
 ---
@@ -120,20 +117,23 @@ python cli.py meta.ods -o out/run1
 # Phase 2 : le JSON est produit, validé, puis écrit en CSV.
 ```
 
-### Sur MinIO (Onyxia)
+### Sur MinIO (Onyxia) — drapeau `--s3`
+
+Le **même** `cli.py` lit et écrit sur S3 lorsqu'on ajoute `--s3` : `input` et `--output`
+sont alors des **clés S3** (et non des chemins locaux). Les identifiants sont injectés par
+Onyxia. Nécessite `s3fs` (voir ci-dessus).
 
 ```bash
-# Prévisualisation Markdown d'un fichier S3 :
-python core/run_on_minio.py user/data/meta.ods user/data/meta.md
+# Prévisualisation Markdown d'un fichier S3 (vers stdout) :
+python cli.py user/data/meta.ods --s3 --serialize-only
 
 # Pipeline complet, S3 → S3 :
-python core/run_full_pipeline_on_minio.py \
-  user/[your_file_path_here]/example.ods \  # stockage des métadonnéees sur onyxia
-  user/[your_file_output_path_here]/example.csv ## Stockage des fichiers output sur onyxia
+python cli.py user/data/meta.ods --s3 -o user/output/meta.csv
+# Sans -o, la sortie est écrite à côté de l'entrée : user/data/meta.csv
 ```
 
-**Sauvegarder le résultat en local.** `run_full_pipeline_on_minio.py` réécrit le CSV sur S3. Pour
-en garder une copie locale, deux options :
+**Sauvegarder le résultat en local.** Le mode `--s3` réécrit le CSV sur S3. Pour en garder une
+copie locale, deux options :
 - récupérer le fichier de sortie depuis S3 (interface Onyxia / `mc cp` / `s3fs`) ;
 - ou exécuter le pipeline local `python cli.py meta.ods -o out/run1`, qui écrit directement
   `out/run1.csv` sur le disque.
@@ -146,5 +146,6 @@ en garder une copie locale, deux options :
   fichiers en sortie.
 - **Dépendances épinglées** (`requirements.txt`).
 - **`temperature=0`** côté modèle pour minimiser (sans l'éliminer) la variabilité.
-- La prévisualisation MinIO (`table_to_md.convert`) utilise désormais **le même** sérialiseur que
-  le pipeline : ce que vous prévisualisez est exactement ce que le modèle reçoit.
+- La prévisualisation (`cli.py --serialize-only`, local ou `--s3`) utilise le même sérialiseur
+  (`transform_input.serialize`) que le pipeline : ce que vous prévisualisez est exactement ce que
+  le modèle reçoit.

@@ -1,26 +1,9 @@
 #!/usr/bin/env python3
-"""UI-agnostic orchestration of the two-phase SDC metadata pipeline.
-
-This is "the pieces put together": any front end (CLI, Streamlit, Gradio, …) drives the
-flow through these four functions and never needs to know the model or schema details.
-
-    serialize(path)            workbook -> Markdown
-    start(markdown)            Phase 1: returns either the model's QUESTIONS,
-                               or — when there are none — the JSON it auto-produced
-    answer(history, answers)   Phase 2: producer's answers -> validated JSON records
-    to_csv(records, out_base)  validated JSON -> CSV for the producer
-
-The prompt (prompts/prompt_questions.md) is the system message on every model call,
-because the model has no memory. Phase 1 vs Phase 2 routing is decided by whether the
-reply already contains a valid JSON array (the prompt's "Aucune question." auto-continue).
-"""
 
 from __future__ import annotations
-
 from dataclasses import dataclass
 from pathlib import Path
-
-from . import read_input, extract_json, json_to_table, llm_client, jsonio
+from . import transform_input, verify_json_output, transform_output, llm_client
 
 PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "prompt_questions.md"
 
@@ -33,7 +16,7 @@ def load_prompt() -> str:
 
 def serialize(path) -> str:
     """Workbook (.ods/.xlsx/.csv) -> Markdown (deterministic)."""
-    return read_input.serialize(path)
+    return transform_input.serialize(path)
 
 
 def wrap(markdown: str) -> str:
@@ -77,10 +60,11 @@ def _records_if_valid(reply: str):
             return None
     if not after.startswith(_SENTINEL):
         return None
-    records = jsonio.try_extract_array(after)
+    records = verify_json_output.try_extract_array(after)
     if not records:  # None (no array) or empty list
         return None
-    if extract_json.validate(records):  # non-empty error list => invalid, treat as "not auto-continued"
+    if verify_json_output.validate(records):  # non-empty error list
+        # => invalid, treat as "not auto-continued"
         return None
     return records
 
@@ -128,10 +112,10 @@ def answer(history: list, answers_text: str, **llm_kwargs) -> list:
     history.append({"role": "assistant", "content": reply})
 
     # Phase 2 has no sentinel — the model emits JSON directly. Scan the full reply.
-    records = jsonio.try_extract_array(reply)
+    records = verify_json_output.try_extract_array(reply)
     if records is None:
         raise ValueError("Phase 2 reply contained no JSON array:\n\n" + reply)
-    errors = extract_json.validate(records)
+    errors = verify_json_output.validate(records)
     if errors:
         raise ValueError("Phase 2 JSON failed schema validation:\n" + "\n".join(errors))
     return records
@@ -141,9 +125,9 @@ def answer(history: list, answers_text: str, **llm_kwargs) -> list:
 
 def to_csv(records: list, out_base) -> tuple:
     """Validate the records and write the producer-facing CSV. Returns (cols, rows)."""
-    errors = extract_json.validate(records)
+    errors = verify_json_output.validate(records)
     if errors:
         raise ValueError("Schema validation failed:\n" + "\n".join(errors))
     out = Path(out_base).with_suffix(".csv")
     out.parent.mkdir(parents=True, exist_ok=True)
-    return json_to_table.write_csv(records, out)
+    return transform_output.write_csv(records, out)

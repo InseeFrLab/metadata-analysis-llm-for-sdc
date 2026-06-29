@@ -1,40 +1,59 @@
 #!/usr/bin/env python3
-"""Slice the JSON array out of an LLM reply and validate it against the contract.
+"""Slice the JSON array out of an LLM reply and verify it against the contract.
 
 Pipeline position:
 
-    LLM reply --> [THIS SCRIPT] --> validated JSON array --> json_to_table.py
-
-The model is told to print the JSON array first (starting `[`, ending `]`) and
-then a short plain-text note on residual uncertainty (per prompt_questions.md).
-This script slices to the outermost array, parses it, and validates it against
-schema/sdc_output.schema.json. It FAILS LOUD: any malformed output (missing
-keys, wrong types, the token "NA" where null is required, unexpected keys) is
-reported and the script exits non-zero, so a bad LLM reply never reaches the
-deterministic transform.
+    LLM reply --> [THIS MODULE] --> validated JSON array --> transform_output.py
 
 Usage:
-    python3 extract_json.py reply.txt                 # validate, print summary
-    python3 extract_json.py reply.txt -o clean.json   # also write the clean array
+    python3 verify_json_output.py reply.txt                 # validate, print summary
+    python3 verify_json_output.py reply.txt -o clean.json   # also write the clean array
 """
 
+from __future__ import annotations
+
 import argparse
-import re
 import json
+import re
 import sys
+from jsonschema import Draft202012Validator
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
 
-try:  # works whether run as a module or as `python3 core/extract_json.py`
-    from core import jsonio
-except ImportError:  # pragma: no cover - direct-execution fallback
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from core import jsonio
+# --- array extraction (stdlib only) ----------------------------------------
 
-# Re-exported for back-compat: callers that imported extract_json.slice_array
-# keep working; the implementation now lives in core/jsonio.py.
-slice_array = jsonio.slice_array
+def slice_array(text: str) -> str:
+    """Return the substring from the first '[' to the last ']' (inclusive).
+
+    Raises ValueError if no bracketed region is present.
+    """
+    start, end = text.find("["), text.rfind("]")
+    if start == -1 or end == -1 or end < start:
+        raise ValueError("No JSON array found in the text (no '[' ... ']').")
+    return text[start: end + 1]
+
+
+def extract_array(text: str) -> list:
+    """Slice + parse the outermost array. Raises if absent, malformed, or not a list."""
+    records = json.loads(slice_array(text))
+    if not isinstance(records, list):
+        raise ValueError(f"Expected a JSON array, got {type(records).__name__}.")
+    return records
+
+
+def try_extract_array(text: str) -> list | None:
+    """Non-raising variant: return the parsed list, or None if there isn't a clean one.
+
+    Used for Phase-1 classification, where "no valid array" is an expected outcome
+    (it means the model asked questions rather than auto-continuing to the JSON).
+    """
+    try:
+        return extract_array(text)
+    except (ValueError, json.JSONDecodeError):
+        return None
+
+
+# --- schema validation ------------------------------------------------------
 
 SCHEMA_PATH = (
     Path(__file__).parent / "schema" / "sdc_output.schema.json"
@@ -49,6 +68,7 @@ def load_schema():
 
 def validate(records, schema=None):
     """Return a list of human-readable validation error strings ([] if valid)."""
+
     validator = Draft202012Validator(schema or load_schema())
     errors = []
     for err in sorted(validator.iter_errors(records), key=lambda e: list(e.path)):
@@ -68,7 +88,7 @@ def records_from_text(text):
     Raises ValueError on any problem (no array, malformed JSON, not a list, or a
     schema violation). This is the one entry point the offline CLI path uses.
     """
-    records = jsonio.extract_array(text)
+    records = extract_array(text)
     errors = validate(records)
     if errors:
         raise ValueError("Schema validation failed:\n" + "\n".join(errors))
@@ -83,6 +103,8 @@ def load_and_validate(path):
     return records_from_text(Path(path).read_text(encoding="utf-8"))
 
 
+# --- CLI --------------------------------------------------------------------
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="Extract + validate the LLM JSON array.")
     p.add_argument("input", help="LLM reply file (JSON array + optional reflection)")
@@ -91,7 +113,7 @@ def main(argv=None):
 
     text = Path(args.input).read_text(encoding="utf-8")
     try:
-        records = jsonio.extract_array(text)  # json.JSONDecodeError is a ValueError
+        records = extract_array(text)  # json.JSONDecodeError is a ValueError
     except ValueError as exc:
         print(f"FAIL: could not parse a JSON array from {args.input}\n  {exc}")
         return 1
