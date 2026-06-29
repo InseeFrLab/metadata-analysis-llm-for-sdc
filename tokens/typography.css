@@ -1,0 +1,52 @@
+/* ============================================================
+   TYPOGRAPHY — DSFR type system
+   Marianne for everything; Spectral for editorial "alt" text.
+   Desktop ladder (≥48em). Sizes in rem; 1rem = 16px.
+   ============================================================ */
+
+:root {
+  /* Families */
+  --font-sans:  "Marianne", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --font-serif: "Spectral", Georgia, "Times New Roman", serif;
+  --font-mono:  ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace;
+
+  /* Weights */
+  --fw-light:   300; /* @kind other */
+  --fw-regular: 400; /* @kind other */
+  --fw-medium:  500; /* @kind other */
+  --fw-bold:    700; /* @kind other */
+
+  /* Display (fr-display--*) — hero / editorial only */
+  --display-xl: 5rem;      --display-xl-lh: 5.5rem;
+  --display-lg: 4.5rem;    --display-lg-lh: 5rem;
+  --display-md: 4rem;      --display-md-lh: 4.5rem;
+  --display-sm: 3.5rem;    --display-sm-lh: 4rem;
+  --display-xs: 3rem;      --display-xs-lh: 3.5rem;
+
+  /* Headings (h1–h6) */
+  --h1: 2.5rem;    --h1-lh: 3rem;
+  --h2: 2rem;      --h2-lh: 2.5rem;
+  --h3: 1.75rem;   --h3-lh: 2.25rem;
+  --h4: 1.5rem;    --h4-lh: 2rem;
+  --h5: 1.375rem;  --h5-lh: 1.75rem;
+  --h6: 1.25rem;   --h6-lh: 1.75rem;
+
+  /* Body / text */
+  --text-xl: 1.25rem;   --text-xl-lh: 2rem;      /* lead */
+  --text-lg: 1.125rem;  --text-lg-lh: 1.75rem;
+  --text-md: 1rem;      --text-md-lh: 1.5rem;    /* default body */
+  --text-sm: 0.875rem;  --text-sm-lh: 1.5rem;
+  --text-xs: 0.75rem;   --text-xs-lh: 1.25rem;
+}
+
+/* Page defaults — opt in by linking this stylesheet */
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--text-md-lh);
+  font-weight: var(--fw-regular);
+  color: var(--text-default);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}

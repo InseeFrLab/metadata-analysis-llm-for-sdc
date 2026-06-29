@@ -26,3 +26,7 @@ s3fs==2024.2.0        # cli.py --s3: read/write on MinIO; needs >=2024.1; lawy i
 # --- optional: only if you also want the rtauargus .rds (off the producer path) ---
 pandas==2.3.2        # needs >=2.0
 pyreadr==0.5.2       # needs >=0.5
+
+# --- web UI (app.py Flask server) ---
+flask==3.1.1          # app.py: serves the UI and API endpoints
+werkzeug==3.1.3       # app.py: secure_filename for uploads; Flask dependency

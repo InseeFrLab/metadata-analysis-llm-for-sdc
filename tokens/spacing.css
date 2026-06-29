@@ -1,0 +1,43 @@
+/* ============================================================
+   SPACING, RADII & ELEVATION — DSFR
+   Spacing unit "v": 1v = 0.25rem = 4px. The DSFR ladder runs
+   0v–32v; the common steps are exposed here.
+   Corners are square by convention; the few exceptions use --radius-sm
+   or --radius-pill.
+   ============================================================ */
+
+:root {
+  /* Spacing (v scale) */
+  --space-0:    0;
+  --space-1v:   0.25rem;   /* 4px  */
+  --space-1-5v: 0.375rem;  /* 6px  */
+  --space-2v:   0.5rem;    /* 8px  */
+  --space-3v:   0.75rem;   /* 12px */
+  --space-4v:   1rem;      /* 16px — standard inter-component gap */
+  --space-5v:   1.25rem;   /* 20px */
+  --space-6v:   1.5rem;    /* 24px — typical card padding */
+  --space-7v:   1.75rem;   /* 28px */
+  --space-8v:   2rem;      /* 32px — section spacing */
+  --space-9v:   2.25rem;   /* 36px */
+  --space-10v:  2.5rem;    /* 40px */
+  --space-12v:  3rem;      /* 48px */
+  --space-14v:  3.5rem;    /* 56px */
+  --space-16v:  4rem;      /* 64px */
+  --space-20v:  5rem;      /* 80px */
+  --space-24v:  6rem;      /* 96px */
+
+  /* Radii */
+  --radius-none: 0;
+  --radius-sm:   0.25rem;   /* search input top corners only */
+  --radius-md:   0.5rem;    /* mild rounding for cards/inputs in app surfaces */
+  --radius-pill: 9999px;    /* tags, badges, toggle */
+
+  /* Elevation — DSFR is restrained; mostly borders + subtle shadow */
+  --shadow-raised:  0 1px 3px 0 rgba(0, 0, 18, 0.16);
+  --shadow-lifted:  0 4px 12px 0 rgba(0, 0, 18, 0.16);
+  --shadow-overlap: 0 8px 16px -4px rgba(0, 0, 18, 0.20);
+
+  /* Layout */
+  --container-max: 78rem;   /* 1248px content frame */
+  --header-height: 5rem;
+}

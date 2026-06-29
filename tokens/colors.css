@@ -1,0 +1,151 @@
+/* ============================================================
+   COLORS — DSFR (Système de Design de l'État) · light theme
+   Faithful to @gouvfr/dsfr v1.14. Two tiers:
+     1. OPTION tokens  — the raw palette (--c-*)
+     2. DECISION tokens — semantic roles components reference
+   Brand identity: Bleu France #000091 / Rouge Marianne #e1000f.
+   ============================================================ */
+
+:root {
+  /* ---------- OPTION · Bleu France (brand primary) ---------- */
+  --c-blue-france-sun-113:        #000091;   /* the Bleu France */
+  --c-blue-france-sun-113-hover:  #1212ff;
+  --c-blue-france-sun-113-active: #2323ff;
+  --c-blue-france-main-525:       #6a6af4;
+  --c-blue-france-850:            #cacafb;
+  --c-blue-france-925:            #e3e3fd;
+  --c-blue-france-925-hover:      #c1c1fb;
+  --c-blue-france-925-active:     #adadf9;
+  --c-blue-france-950:            #ececfe;
+  --c-blue-france-975:            #f5f5fe;
+  --c-blue-france-975-hover:      #dcdcfc;
+  --c-blue-france-975-active:     #cbcbfa;
+
+  /* ---------- OPTION · Rouge Marianne (brand accent) ---------- */
+  --c-red-marianne-main:          #e1000f;
+  --c-red-marianne-425:           #c9191e;
+  --c-red-marianne-425-hover:     #f93f42;
+  --c-red-marianne-850:           #fcbfbf;
+  --c-red-marianne-925:           #fddede;
+  --c-red-marianne-950:           #fee9e9;
+  --c-red-marianne-975:           #fef4f4;
+
+  /* ---------- OPTION · Neutrals (greys) ---------- */
+  --c-grey-1000:        #ffffff;
+  --c-grey-1000-hover:  #f6f6f6;
+  --c-grey-1000-active: #ededed;
+  --c-grey-975:         #f6f6f6;
+  --c-grey-975-hover:   #dfdfdf;
+  --c-grey-975-active:  #cfcfcf;
+  --c-grey-950:         #eeeeee;
+  --c-grey-950-hover:   #d2d2d2;
+  --c-grey-950-active:  #c1c1c1;
+  --c-grey-925:         #e5e5e5;
+  --c-grey-900:         #dddddd;
+  --c-grey-850:         #cecece;
+  --c-grey-625:         #929292;
+  --c-grey-425:         #666666;
+  --c-grey-200:         #3a3a3a;
+  --c-grey-200-hover:   #616161;
+  --c-grey-200-active:  #777777;
+  --c-grey-50:          #161616;
+  --c-grey-0:           #000000;
+
+  /* ---------- OPTION · System (functional) ---------- */
+  --c-info-main:        #0078f3;
+  --c-info-425:         #0063cb;
+  --c-info-950:         #e8edff;
+  --c-info-975:         #f4f6ff;
+
+  --c-success-main:     #1f8d49;
+  --c-success-425:      #18753c;
+  --c-success-950:      #b8fec9;
+  --c-success-975:      #dffee6;
+
+  --c-warning-main:     #d64d00;
+  --c-warning-425:      #b34000;
+  --c-warning-950:      #ffe9e6;
+  --c-warning-975:      #fff4f3;
+
+  --c-error-main:       #f60700;
+  --c-error-425:        #ce0500;
+  --c-error-950:        #ffe9e9;
+  --c-error-975:        #fff4f4;
+
+  /* ---------- OPTION · Illustrative accents (editorial / data-viz) ---------- */
+  --c-green-emeraude:   #00a95f;
+  --c-green-menthe:     #009081;
+  --c-blue-ecume:       #465f9d;
+  --c-blue-cumulus:     #417dc4;
+  --c-purple-glycine:   #a558a0;
+  --c-brown-cafe-creme: #d1b781;
+  --c-yellow-tournesol: #c8aa39;
+  --c-orange-terre-battue: #e4794a;
+
+  /* ============================================================
+     DECISION TOKENS — components reference THESE, never the raw palette.
+     ============================================================ */
+
+  /* Backgrounds */
+  --background-default:            var(--c-grey-1000);   /* page / card surface */
+  --background-default-hover:      var(--c-grey-1000-hover);
+  --background-default-active:     var(--c-grey-1000-active);
+  --background-alt:                var(--c-grey-975);    /* alt grey section */
+  --background-alt-hover:          var(--c-grey-975-hover);
+  --background-contrast:           var(--c-grey-950);    /* contrast fill / disabled track */
+  --background-contrast-hover:     var(--c-grey-950-hover);
+  --background-raised:             var(--c-grey-1000);   /* elevated card */
+  --background-disabled:           var(--c-grey-925);
+
+  --background-action-high:        var(--c-blue-france-sun-113);   /* primary button */
+  --background-action-high-hover:  var(--c-blue-france-sun-113-hover);
+  --background-action-high-active: var(--c-blue-france-sun-113-active);
+  --background-action-low:         var(--c-blue-france-925);       /* secondary tint / selected */
+  --background-action-low-hover:   var(--c-blue-france-925-hover);
+  --background-action-low-active:  var(--c-blue-france-925-active);
+  --background-open:               var(--c-blue-france-925);       /* open/expanded surfaces */
+
+  --background-flat-info:          var(--c-info-425);
+  --background-flat-success:       var(--c-success-425);
+  --background-flat-warning:       var(--c-warning-425);
+  --background-flat-error:         var(--c-error-425);
+
+  --background-contrast-info:      var(--c-info-950);
+  --background-contrast-success:   var(--c-success-950);
+  --background-contrast-warning:   var(--c-warning-950);
+  --background-contrast-error:     var(--c-error-950);
+
+  --background-alt-info:           var(--c-info-975);
+  --background-alt-success:        var(--c-success-975);
+  --background-alt-warning:        var(--c-warning-975);
+  --background-alt-error:          var(--c-error-975);
+  --background-alt-blue-france:    var(--c-blue-france-975);
+
+  /* Text */
+  --text-default:        var(--c-grey-200);   /* body copy */
+  --text-title:          var(--c-grey-50);    /* headings / strong */
+  --text-label:          var(--c-grey-50);    /* form labels */
+  --text-mention:        var(--c-grey-425);   /* captions / hints */
+  --text-disabled:       var(--c-grey-625);
+  --text-inverted:       var(--c-grey-1000);  /* on dark / brand fills */
+  --text-action-high:    var(--c-blue-france-sun-113);  /* links / brand text */
+  --text-default-info:   var(--c-info-425);
+  --text-default-success:var(--c-success-425);
+  --text-default-warning:var(--c-warning-425);
+  --text-default-error:  var(--c-error-425);
+
+  /* Borders */
+  --border-default:      var(--c-grey-900);   /* default hairline */
+  --border-contrast:     var(--c-grey-625);   /* stronger divider */
+  --border-plain:        var(--c-grey-200);   /* solid neutral border */
+  --border-disabled:     var(--c-grey-925);
+  --border-action-high:  var(--c-blue-france-sun-113);
+  --border-default-blue-france: var(--c-blue-france-main-525);
+  --border-plain-info:   var(--c-info-425);
+  --border-plain-success:var(--c-success-425);
+  --border-plain-warning:var(--c-warning-425);
+  --border-plain-error:  var(--c-error-425);
+
+  /* Focus ring (DSFR: 2px solid, 2px offset) */
+  --focus-ring:          #0a76f6;
+}

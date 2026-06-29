@@ -1,0 +1,10 @@
+/* ============================================================
+   SDC Metadata Design System — global entry point.
+   INSEE tool built on the DSFR (Système de Design de l'État).
+   Consumers link THIS file. It only @imports; no rules live here.
+   ============================================================ */
+
+@import "tokens/fonts.css";
+@import "tokens/colors.css";
+@import "tokens/typography.css";
+@import "tokens/spacing.css";
