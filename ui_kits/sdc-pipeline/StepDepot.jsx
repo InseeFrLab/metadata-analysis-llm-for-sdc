@@ -1,51 +1,106 @@
-/* Étape 3 — Vérification : aperçu Markdown sérialisé + tableau validé contre le schéma. */
+/* Étape 1 — Dépôt : sélection et envoi du classeur de métadonnées. */
 const VDS = window.SDCMetadataDesignSystem_967a78;
+const { useState: useDepotState, useRef: useDepotRef } = React;
 
-const VCOLUMNS = [
-  { key: "table_name",        label: "table_name",        mono: true, width: "8rem" },
-  { key: "field",             label: "field",             mono: true },
-  { key: "hrc_field",         label: "hrc_field",         mono: true, width: "7rem" },
-  { key: "indicator",         label: "indicator",         mono: true },
-  { key: "hrc_indicator",     label: "hrc_indicator",     mono: true, width: "9rem" },
-  { key: "spanning",          label: "spanning_variables", mono: true },
-];
+function StepDepot({ file, onSelect, onRemove, onNext }) {
+  const inputRef = useDepotRef(null);
+  const [dragOver, setDragOver] = useDepotState(false);
 
-function StepVerification({ markdown, records, onBack, onNext }) {
+  function handleFileChange(e) {
+    const f = e.target.files[0];
+    if (f) onSelect({ raw: f, name: f.name });
+    e.target.value = "";
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragOver(false);
+    const f = e.dataTransfer.files[0];
+    if (f) onSelect({ raw: f, name: f.name });
+  }
+
   return (
     <div className="sdc-step">
       <div className="sdc-step__intro">
-        <img className="sdc-step__pic" src="../../assets/pictograms/data-visualization.svg" alt="" aria-hidden="true" />
+        <img className="sdc-step__pic" src="../../assets/pictograms/document-add.svg" alt="" aria-hidden="true" />
         <div>
-          <h1 className="sdc-h1">Vérifiez les tableaux extraits</h1>
+          <h1 className="sdc-h1">Déposez votre classeur de métadonnées</h1>
           <p className="sdc-lead">
-            À gauche, le Markdown exact transmis au modèle. À droite, le tableau normalisé —
-            une ligne par tableau statistique, validé contre le schéma.
+            Formats acceptés : <b>.ods</b>, <b>.xlsx</b>, <b>.csv</b>. Taille maximale : 16&nbsp;Mo.
+            Le classeur sera analysé par le modèle pour extraire et normaliser ses métadonnées.
           </p>
         </div>
       </div>
 
-      <div className="sdc-verif">
-        <section className="sdc-verif__panel">
-          <h2 className="sdc-panel-title"><i className="ri-markdown-line" aria-hidden="true"></i>Métadonnées sérialisées</h2>
-          <pre className="sdc-md">{markdown}</pre>
-        </section>
-        <section className="sdc-verif__panel">
-          <h2 className="sdc-panel-title"><i className="ri-table-line" aria-hidden="true"></i>Tableau normalisé</h2>
-          <VDS.Alert type="success" small title={`Validé contre le schéma — ${records.length} lignes, aucune erreur.`} />
-          <div style={{ marginTop: "1rem" }}>
-            <VDS.Table columns={VCOLUMNS} rows={records} striped
-              caption="« NA » = attribut sans hiérarchie. spanning_variables ≥ 1 entrée." />
+      <div
+        onClick={() => !file && inputRef.current && inputRef.current.click()}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        role={file ? undefined : "button"}
+        tabIndex={file ? undefined : 0}
+        aria-label="Zone de dépôt de fichier"
+        onKeyDown={(e) => { if (!file && (e.key === "Enter" || e.key === " ")) inputRef.current && inputRef.current.click(); }}
+        style={{
+          border: "2px dashed " + (dragOver ? "var(--border-action-high)" : "var(--border-contrast)"),
+          borderRadius: "var(--radius-md)",
+          padding: "3rem 2rem",
+          textAlign: "center",
+          cursor: file ? "default" : "pointer",
+          background: dragOver ? "var(--background-action-low)" : "var(--background-default)",
+          transition: "background 0.15s, border-color 0.15s",
+        }}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".ods,.xlsx,.csv"
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
+        {file ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1rem" }}>
+            <i className="ri-file-excel-2-line" style={{ fontSize: "2rem", color: "var(--text-action-high)" }} aria-hidden="true"></i>
+            <div style={{ textAlign: "left" }}>
+              <p style={{ margin: 0, fontWeight: "var(--fw-bold)", color: "var(--text-title)" }}>{file.name}</p>
+              <p style={{ margin: 0, fontSize: "var(--text-sm)", color: "var(--text-mention)" }}>
+                {(file.raw.size / 1024).toFixed(1)} Ko
+              </p>
+            </div>
+            <VDS.Button
+              variant="secondary"
+              icon="ri-delete-bin-line"
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            >
+              Supprimer
+            </VDS.Button>
           </div>
-          <VDS.Alert type="warning" small title="2 hiérarchies inférées (hrc_salades) à partir d'une note — à confirmer avant publication." />
-        </section>
+        ) : (
+          <div>
+            <i className="ri-upload-cloud-line" style={{ fontSize: "3rem", color: "var(--text-mention)", display: "block", marginBottom: "1rem" }} aria-hidden="true"></i>
+            <p style={{ margin: "0 0 .5rem", fontWeight: "var(--fw-medium)", color: "var(--text-title)" }}>
+              Glissez un fichier ici ou cliquez pour parcourir
+            </p>
+            <p style={{ margin: 0, fontSize: "var(--text-sm)", color: "var(--text-mention)" }}>
+              .ods · .xlsx · .csv — 16 Mo max
+            </p>
+          </div>
+        )}
       </div>
 
-      <div className="sdc-actions sdc-actions--split">
-        <VDS.Button variant="secondary" icon="ri-arrow-left-line" onClick={onBack}>Retour aux questions</VDS.Button>
-        <VDS.Button icon="ri-check-line" onClick={onNext}>Valider et exporter</VDS.Button>
+      {file && (
+        <VDS.Alert type="info" small title={"Fichier sélectionné : " + file.name}>
+          Cliquez sur « Analyser le classeur » pour lancer l'extraction des métadonnées.
+        </VDS.Alert>
+      )}
+
+      <div className="sdc-actions">
+        <VDS.Button icon="ri-search-line" iconRight disabled={!file} onClick={onNext}>
+          Analyser le classeur
+        </VDS.Button>
       </div>
     </div>
   );
 }
 
-window.StepVerification = StepVerification;
+window.StepDepot = StepDepot;
