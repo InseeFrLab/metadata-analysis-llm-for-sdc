@@ -38,7 +38,7 @@ def read_file(filepath: str):
 
     with ctx as f:
         if extension == "csv":
-            # nom du fichier : le contenu
+            # nom du fichier : le contenu ou modifier si besoin pour csv
             return {Path(filepath).stem: pd.read_csv(f)}
         else:
             return pd.read_excel(f, sheet_name=None, engine=extension)

@@ -1,3 +1,6 @@
+*.md
+*.ods
+
 # MacOS metadata 
 .DS_Store
 

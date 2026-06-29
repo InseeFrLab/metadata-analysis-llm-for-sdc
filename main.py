@@ -12,13 +12,13 @@ if __name__ == "__main__":
 
     # Read
     sheets = read_file(p.input)
-    df = sheets
 
     # Preprocess
 
     # Process
+    df = sheets
 
     # Verify
 
     # Upload
-    upload_output(df, p.output)
+    upload_output(df, p.input, p.output)
