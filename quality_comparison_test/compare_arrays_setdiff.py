@@ -2,6 +2,8 @@ import sys
 import numpy as np
 import pandas as pd
 
+# python compare_arrays_setdiff.py ex5_comparaison_indicateurs_LLMvsCorr.ods
+
 
 def load_arrays_from_ods(filepath, sheet_name=0):
     """
@@ -36,3 +38,4 @@ if __name__ == "__main__":
     non_matches = np.setdiff1d(np.array(arr1, dtype=str), np.array(arr2, dtype=str))
 
     print(f"non-matches count: {len(non_matches)}")
+    print(non_matches)
