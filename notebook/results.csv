@@ -1,0 +1,7 @@
+filename,timestamp,total_wrong_cells,n_tables_ref,n_tables_out,n_tables_diff,table_name,field,hrc_field,indicator,hrc_indicator,spanning,hrc_spanning,missing_from_output,extra_in_output
+sujets_analyse_demande_2.ods,2026-06-23T07:29:39Z,0,10,10,0,0,0,0,0,0,0,0,0,0
+metadonnees_ex5.ods,2026-06-23T11:50:54Z,1750,350,294,-56,294,294,0,294,0,294,294,56,0
+metadonnees_ex5.ods,2026-06-23T13:33:19Z,1819,350,360,10,350,350,0,349,0,350,350,0,10
+metadonnees_ex5_sansSL.ods,2026-06-24T07:25:20Z,1776,350,336,-14,336,336,0,334,0,336,336,14,0
+sujets_analyse_demande_1.ods,2026-06-24T11:52:45Z,0,26,26,0,0,0,0,0,0,0,0,0,0
+metadonnees_ex5_sansSL.ods,2026-06-24T13:40:11Z,2448,350,336,-14,336,336,0,334,0,672,672,14,0

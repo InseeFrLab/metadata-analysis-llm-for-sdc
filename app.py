@@ -104,7 +104,7 @@ def upload_metadata():
     try:
         md = pipeline.serialize(filepath)
     except Exception as exc:
-        return jsonify({"error": f"Échec de la sérialisation : {exc}"}), 422
+        return jsonify({"error": str(exc)}), 502
 
     try:
         r = pipeline.start(md)
