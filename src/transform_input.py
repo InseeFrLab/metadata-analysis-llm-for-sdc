@@ -1,4 +1,6 @@
 import pandas as pd
+from data import read_file
+from pathlib import Path
 
 
 def extract_sheet(df):
@@ -82,3 +84,9 @@ def to_markdown(sheets, title=None):
         parts.append(section)
 
     return "\n\n".join(parts) + "\n"
+
+
+def serialize(path):
+    """Workbook path -> Markdown string, using data.py for I/O."""
+    sheets = read_file(path)
+    return to_markdown(sheets, title=Path(path).name)

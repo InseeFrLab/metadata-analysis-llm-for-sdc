@@ -18,7 +18,6 @@ def connect_s3() -> s3fs.S3FileSystem:
 
 def detect_file_type(path: str) -> str:
     """Détermine le type de fichier depuis le chemin."""
-    ext = Path(path).suffix
     ext = path.rsplit(".", 1)[-1].lower()
     if ext == "ods":
         return "odf"
@@ -52,7 +51,8 @@ def upload_output(
     filename = Path(input_path).stem + ".csv"
     output_path = output_folder+filename
 
-    ctx = connect_s3().open(output_path) if output_path.startswith("s3") else open(output_path, "wb")
+    ctx = connect_s3().open(output_path) if output_path.startswith("s3") else open(
+        output_path, "wb")
 
     with ctx as f:
         df.to_csv(f, index=False)
