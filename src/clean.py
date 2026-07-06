@@ -29,7 +29,7 @@ def _dataframe_to_rows(df):
 
 def clean_sheet(rows):
     """Nettoie les cellules et retire les cellules/lignes vides en fin de feuille."""
-    rows = [_strip_trailing_empty([_clean(c) for c in r]) for r in rows]
+    rows = [_strip_trailing_empty([_clean(cell) for cell in r]) for r in rows]
     while rows and not rows[-1]:
         rows.pop()
     return rows

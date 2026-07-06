@@ -39,7 +39,10 @@ if __name__ == "__main__":
                    help="chemin du prompt systeme")
     args = p.parse_args()
 
-    # Read + Preprocess (read_file + clean_sheets, chained inside serialize)
+    # Read 
+     
+    
+    # + Preprocess (read_file + clean_sheets, chained inside serialize)
     markdown = serialize(args.input)
 
     # Process (Phase 1: send to LLM)

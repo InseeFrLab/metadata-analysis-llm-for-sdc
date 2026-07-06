@@ -12,16 +12,11 @@ def slice_array(text: str) -> str:
     return text[start: end + 1]
 
 
-def extract_array(text: str) -> list:
-    """Validité du format JSON"""
-    return json.loads(slice_array(text))
-
-
-def try_extract_array(text: str) -> list | None:
+def extract_array(text: str) -> list | None:
     """Si le modèle a posé des questions et que
     l'output n'est pas un JSON
     """
     try:
-        return extract_array(text)
+        return json.loads(slice_array(text))
     except ValueError:
         return None
