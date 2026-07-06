@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from jsonschema import Draft202012Validator
 from pathlib import Path
-from extract_JSON_array import extract_array
+from .extract_JSON_array import extract_array
 
 SCHEMA_PATH = Path(__file__).parent / "schema" / "sdc_output.schema.json"
 

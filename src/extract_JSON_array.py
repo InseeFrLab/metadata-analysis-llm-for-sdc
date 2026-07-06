@@ -13,7 +13,7 @@ def slice_array(text: str) -> str:
 
 
 def extract_array(text: str) -> list:
-    """Validité JSON"""
+    """Validité du format JSON"""
     return json.loads(slice_array(text))
 
 

@@ -1,5 +1,4 @@
-
-from data import read_file
+from .data import read_file
 
 
 def _clean(text):

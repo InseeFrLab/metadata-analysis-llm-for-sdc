@@ -1,4 +1,4 @@
-from clean_input import clean_input
+from .clean_input import clean_input
 
 
 def _table_md(rows):
