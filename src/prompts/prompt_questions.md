@@ -22,9 +22,9 @@ Lisez le fichier entièrement. Appliquez les règles des sections 2 à 9 pour co
 
 **Structure de sortie de la Phase 1 — unique et obligatoire :**
 
-1. D'abord vos **notes de travail** : l'inventaire des feuilles (Étape 0), vos décisions, et l'audit des questions candidates (voir Étape de révision).
-2. Puis la ligne de séparation exacte : `---`
-3. Puis, après cette ligne : **uniquement** la liste finale des questions, regroupées par catégorie. Rien d'autre — pas de prose, pas de résumé, pas de JSON. Arrêtez-vous ici et attendez les réponses du producteur.
+**Uniquement** la liste finale des questions, regroupées par catégorie. Rien d'autre — pas de prose, pas de résumé, pas de JSON. Arrêtez-vous ici et attendez les réponses du producteur.
+
+**Cas particulier — aucune question ne subsiste après révision.** Écrivez alors, immédiatement après la ligne `---`, exactement et uniquement la phrase : `Aucune question.` N'écrivez rien d'autre à cet endroit (ni liste de catégories vide, ni reformulation). Poursuivez alors directement en Phase 2 sans attendre de réponse du producteur.
 
 **Critère pour poser une question — une seule condition :**
 - La réponse changerait la valeur d'au moins un champ du JSON final.
@@ -50,10 +50,10 @@ Lisez le fichier entièrement. Appliquez les règles des sections 2 à 9 pour co
 Dans vos notes de travail, écrivez pour **chaque question candidate** trois lignes :
 
 - **Source** — feuille et cellule(s) à l'origine de l'ambiguïté.
-- **Test fichier** — la réponse est-elle écrite **mot pour mot** dans le fichier, sans interprétation ? Si oui, citez l'endroit exact et marquez : SUPPRIMÉE. Si vous devez inférer, déduire ou interpréter pour y répondre, conservez la question.
-- **Test règles** — une règle de ce prompt (sections 2 à 9) couvre-t-elle ce cas **exactement**, sans aucune interprétation ? Si oui, citez la section et marquez : SUPPRIMÉE. **Dans le doute, conservez la question.**
+- **Test fichier** — la réponse est-elle écrite **mot pour mot** dans le fichier, sans interprétation ? Si oui, citez l'endroit exact et notez : test fichier réussi. Si vous devez inférer, déduire ou interpréter pour y répondre, notez : test fichier échoué.
+- **Test règles** — une règle de ce prompt (sections 2 à 9) couvre-t-elle ce cas **exactement**, sans aucune interprétation ? Si oui, citez la section et notez : test règles réussi. Sinon, notez : test règles échoué.
 
-Une question survit à la révision dès qu'elle échoue à l'un des deux tests. **En cas de doute sur l'application d'un test, conservez la question.**
+**Une question n'est SUPPRIMÉE que si les deux tests sont réussis.** Si l'un des deux tests échoue — même un seul — conservez la question. **Dans le doute sur l'application d'un test, considérez-le comme échoué et conservez la question.**
 
 Exemple à supprimer : « Quel est le champ des tableaux ? » → la note dit littéralement « Tous les tableaux portent sur les entreprises françaises ». Supprimée.
 
