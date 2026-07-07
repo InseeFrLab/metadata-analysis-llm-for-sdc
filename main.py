@@ -1,22 +1,13 @@
-from src.transform_input import serialize
-from src.LLM_API_call import chat
-from src.validate_json_output import records_from_text
-from src.transform_output import write_csv
 import argparse
+import csv
 
-SENTINEL = "Aucune question."
-
-
-def wrap(markdown):
-    """Delimite les metadonnees pour le prompt."""
-    return f"<metadonnees>\n{markdown}\n</metadonnees>"
-
-
-def is_auto_continued(reply):
-    """Vrai si le modele a repondu directement en JSON (pas de questions)."""
-    parts = reply.split("\n---", 1)
-    after = parts[1].strip() if len(parts) == 2 else reply.strip()
-    return after.startswith(SENTINEL)
+from src.data import read_file
+from src.clean import _dataframe_to_rows, clean_sheet
+from src.transform_input import wrap, to_markdown
+from src.LLM_API_call import chat, is_auto_continued
+from src.extract_JSON_array import extract_array
+from src.validate_json_output import validate
+from src.transform_output import _spanning_pairs, max_spanning, HEADER_BASE
 
 
 def read_producer_answers():
@@ -39,13 +30,22 @@ if __name__ == "__main__":
                    help="chemin du prompt systeme")
     args = p.parse_args()
 
-    # Read 
-     
-    
-    # + Preprocess (read_file + clean_sheets, chained inside serialize)
-    markdown = serialize(args.input)
+    # ---- I. Read ---------------------------------------------------
+    data = read_file(args.input)
 
-    # Process (Phase 1: send to LLM)
+    # ---- II. Clean ---------------------------------------------------
+    cleaned_sheets = []
+    for name, df in data.items():
+        rows = _dataframe_to_rows(df)
+        rows = clean_sheet(rows)
+        if any(any(c for c in r) for r in rows):
+            cleaned_sheets.append((name, rows))
+
+    # ---- III. Transform to markdown ------------------------------------
+    title = args.input.rsplit("/", 1)[-1]
+    markdown = to_markdown(cleaned_sheets, title=title)
+
+    # ---- IV. LLM call(s) ------------------------------------------------
     prompt = open(args.prompt, encoding="utf-8").read()
     history = [
         {"role": "system", "content": prompt},
@@ -54,18 +54,38 @@ if __name__ == "__main__":
     reply = chat(history)
     history.append({"role": "assistant", "content": reply})
 
-    if is_auto_continued(reply):
-        records = records_from_text(reply)
-    else:
+    if not is_auto_continued(reply):
         print("\n--- Questions du modele ---\n")
         print(reply)
         answers = read_producer_answers()
         history.append({"role": "user", "content": answers})
         reply = chat(history)
 
-    # Verify
-    records = records_from_text(reply)
+    # ---- V. Verify -----------------------------------------------------
+    records = extract_array(reply)
+    errors = validate(records)
+    if errors:
+        raise ValueError("Schema validation failed:\n" + "\n".join(errors))
 
-    # Upload
-    cols, rows = write_csv(records, args.output)
+    # ---- VI. Write CSV ---------------------------------------------------
+    n_span = max_spanning(records)
+    cols = list(HEADER_BASE)
+    for i in range(1, n_span + 1):
+        cols += [f"spanning_{i}", f"hrc_spanning_{i}"]
+
+    rows = []
+    for rec in records:
+        row = [rec["table_name"], rec["field"], rec["hrc_field"],
+               rec["indicator"], rec["hrc_indicator"]]
+        pairs = _spanning_pairs(rec)
+        for i in range(n_span):
+            code, hrc = pairs[i] if i < len(pairs) else ("", "")
+            row += [code, hrc]
+        rows.append(row)
+
+    with open(args.output, "w", newline="", encoding="utf-8-sig") as fh:
+        w = csv.writer(fh)
+        w.writerow(cols)
+        w.writerows(rows)
+
     print(f"\nEcrit {args.output} ({len(rows)} lignes x {len(cols)} colonnes)")

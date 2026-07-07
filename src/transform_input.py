@@ -1,6 +1,3 @@
-from .clean_input import clean_input
-
-
 def _table_md(rows):
     """Transormation par feuille en tableaux md"""
     width = max((len(r) for r in rows), default=0)
@@ -28,8 +25,6 @@ def to_markdown(sheets, title=None):
     return "\n\n".join(parts) + "\n"
 
 
-def serialize(filepath):
-    """Applique toute la phase de préparation de l'input"""
-    sheets = clean_input(filepath)
-    title = filepath.rsplit("/", 1)[-1]
-    return to_markdown(sheets, title=title)
+def wrap(markdown):
+    """Delimite les metadonnees pour le prompt."""
+    return f"<metadonnees>\n{markdown}\n</metadonnees>"

@@ -1,6 +1,3 @@
-from .data import read_file
-
-
 def _clean(text):
     """Nettoyage par cellule pour avoir un str propre (pas d'espace,...)"""
     if text is None:
@@ -33,19 +30,3 @@ def clean_sheet(rows):
     while rows and not rows[-1]:
         rows.pop()
     return rows
-
-
-def clean_sheets(data):
-    """dict[nom_feuille, DataFrame] ->
-     [(nom_feuille, lignes nettoyées), ...], feuilles vides écartées."""
-    cleaned = []
-    for name, df in data.items():
-        rows = clean_sheet(_dataframe_to_rows(df))
-        if any(any(c for c in r) for r in rows):
-            cleaned.append((name, rows))
-    return cleaned
-
-
-def clean_input(filepath):
-    """Lit un classeur (local ou S3) et retourne les feuilles nettoyées."""
-    return clean_sheets(read_file(filepath))

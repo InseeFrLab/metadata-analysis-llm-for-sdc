@@ -4,6 +4,7 @@ import os
 
 DEFAULT_BASE_URL = "https://llm.lab.sspcloud.fr/api/v1"  # INSEE SSP Cloud
 DEFAULT_MODEL = "qwen3-6-35b-moe"
+SENTINEL = "Aucune question."
 
 
 def resolve_config(model=None, base_url=None):
@@ -48,3 +49,10 @@ def chat(messages, *, model=None, base_url=None, temperature=0.0, max_tokens=320
             "/no_think to the system prompt."
         )
     return content
+
+
+def is_auto_continued(reply):
+    """Vrai si le modele a repondu directement en JSON (pas de questions)."""
+    parts = reply.split("\n---", 1)
+    after = parts[1].strip() if len(parts) == 2 else reply.strip()
+    return after.startswith(SENTINEL)
