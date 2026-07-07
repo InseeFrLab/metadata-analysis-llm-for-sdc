@@ -51,7 +51,7 @@ def chat(messages, *, model=None, base_url=None, temperature=0.0, max_tokens=320
     return content
 
 
-def is_auto_continued(reply):
+def is_auto_continued(reply: str) -> bool:
     """Vrai si le modele a repondu directement en JSON (pas de questions)."""
     parts = reply.split("\n---", 1)
     after = parts[1].strip() if len(parts) == 2 else reply.strip()

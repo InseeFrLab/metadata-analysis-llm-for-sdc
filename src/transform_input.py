@@ -1,4 +1,7 @@
-def _table_md(rows):
+from typing import List, Tuple, Optional
+
+
+def _table_md(rows: List[List[str]]) -> str:
     """Transormation par feuille en tableaux md"""
     width = max((len(r) for r in rows), default=0)
     if width == 0:
@@ -13,7 +16,7 @@ def _table_md(rows):
     return "\n".join(lines)
 
 
-def to_markdown(sheets, title=None):
+def to_markdown(sheets: List[Tuple[str, List[List[str]]]], title: Optional[str] = None) -> str:
     """Combiner [(sheet_name, rows), ...] en un seul bloc"""
     parts = []
     if title:
@@ -25,6 +28,6 @@ def to_markdown(sheets, title=None):
     return "\n\n".join(parts) + "\n"
 
 
-def wrap(markdown):
+def wrap(markdown: str) -> str:
     """Delimite les metadonnees pour le prompt."""
     return f"<metadonnees>\n{markdown}\n</metadonnees>"

@@ -3,6 +3,7 @@ import s3fs
 import os
 import pandas as pd
 from pathlib import Path
+from typing import Dict
 
 
 def connect_s3() -> s3fs.S3FileSystem:
@@ -29,7 +30,7 @@ def detect_file_type(path: str) -> str:
     raise ValueError(f"Extension non supportée : '{ext}'")
 
 
-def read_file(filepath: str):
+def read_file(filepath: str) -> Dict[str, pd.DataFrame]:
     extension = detect_file_type(filepath)
 
     # Ouverture selon la source
@@ -47,7 +48,7 @@ def upload_output(
     df: pd.DataFrame,
     input_path: str,
     output_folder: str
-):
+) -> None:
     filename = Path(input_path).stem + ".csv"
     output_path = output_folder+filename
 
