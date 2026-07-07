@@ -45,7 +45,7 @@ Lisez le fichier entièrement. Appliquez les règles des sections 2 à 9 pour co
 3. Variables de croisement et nomenclatures
 4. Structure des tableaux
 
-**Étape de révision — obligatoire avant d'émettre les questions.**
+**Étape de révision — obligatoire avant d'émettre les questions. A NE PAS RENVOYER A L'UTILISATEUR: SEULES LA LISTE DE QUESTIONS FINALES DOIVET ETRE ENVOY2ES A L'UTILISATEUR**
 
 Dans vos notes de travail, écrivez pour **chaque question candidate** trois lignes :
 
