@@ -19,7 +19,7 @@ def resolve_config(model=None, base_url=None):
     return {"model": model, "base_url": base_url, "api_key": api_key}
 
 
-def chat(messages, *, model=None, base_url=None, temperature=0.0, max_tokens=32000):
+def chat(messages, *, model=None, base_url=None, temperature=0.0, max_tokens=65000):
     """LLM call"""
     cfg = resolve_config(model, base_url)
     client = OpenAI(base_url=cfg["base_url"], api_key=cfg["api_key"])

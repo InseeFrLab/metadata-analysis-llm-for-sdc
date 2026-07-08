@@ -1,5 +1,3 @@
-/no_think
-
 # SDC Metadata → Questions puis JSON
 
 Vous traitez un fichier de métadonnées décrivant des tableaux statistiques demandés. Votre travail se déroule en deux phases strictement séparées.
