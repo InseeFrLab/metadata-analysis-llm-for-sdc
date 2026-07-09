@@ -4,7 +4,7 @@ import csv
 from src.data import read_file
 from src.clean import _dataframe_to_rows, clean_sheet
 from src.transform_input import wrap, to_markdown
-from src.LLM_API_call import chat, is_auto_continued
+from src.LLM_API_call import chat, is_auto_continued, FORCE_JSON_INSTRUCTION
 from src.extract_JSON_array import extract_array
 from src.validate_json_output import validate
 from src.transform_output import _spanning_pairs, max_spanning, HEADER_BASE
@@ -60,6 +60,14 @@ if __name__ == "__main__":
         answers = read_producer_answers()
         history.append({"role": "user", "content": answers})
         reply = chat(history)
+        history.append({"role": "assistant", "content": reply})
+
+        # Un seul tour est autorise.
+        if extract_array(reply) is None:
+            print("\n[!] Le modele repose des questions -- un seul tour de "
+                  "producteur est autorise. JSON force.")
+            history.append({"role": "user", "content": FORCE_JSON_INSTRUCTION})
+            reply = chat(history)
 
     # ---- V. Verify -----------------------------------------------------
     records = extract_array(reply)

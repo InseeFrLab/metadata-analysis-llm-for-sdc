@@ -5,6 +5,14 @@ import os
 DEFAULT_BASE_URL = "https://llm.lab.sspcloud.fr/api/v1"  # INSEE SSP Cloud
 DEFAULT_MODEL = "qwen3-6-35b-moe"
 SENTINEL = "Aucune question."
+FORCE_JSON_INSTRUCTION = (
+    "Vous avez deja recu une reponse du producteur a vos questions. Aucun "
+    "autre tour de questions n'est possible. Ne posez plus de questions. "
+    "Produisez maintenant le tableau JSON final selon le contrat de sortie de "
+    "la Phase 2 : pour toute ambiguite restante, faites le meilleur choix "
+    "possible et consignez-la dans la note d'incertitude residuelle apres le "
+    "\"]\"."
+)
 
 
 def resolve_config(model=None, base_url=None):

@@ -22,8 +22,6 @@ Lisez le fichier entièrement. Appliquez les règles des sections 2 à 9 pour co
 
 **Uniquement** la liste finale des questions, regroupées par catégorie. Rien d'autre — pas de prose, pas de résumé, pas de JSON. Arrêtez-vous ici et attendez les réponses du producteur.
 
-**Cas particulier — aucune question ne subsiste après révision.** Écrivez alors, immédiatement après la ligne `---`, exactement et uniquement la phrase : `Aucune question.` N'écrivez rien d'autre à cet endroit (ni liste de catégories vide, ni reformulation). Poursuivez alors directement en Phase 2 sans attendre de réponse du producteur.
-
 **Critère pour poser une question — une seule condition :**
 - La réponse changerait la valeur d'au moins un champ du JSON final.
 
@@ -43,15 +41,15 @@ Lisez le fichier entièrement. Appliquez les règles des sections 2 à 9 pour co
 3. Variables de croisement et nomenclatures
 4. Structure des tableaux
 
-**Étape de révision — obligatoire avant d'émettre les questions. A NE PAS RENVOYER A L'UTILISATEUR: SEULES LA LISTE DE QUESTIONS FINALES DOIVET ETRE ENVOY2ES A L'UTILISATEUR**
+**Étape de révision — obligatoire avant d'émettre les questions.**
 
 Dans vos notes de travail, écrivez pour **chaque question candidate** trois lignes :
 
 - **Source** — feuille et cellule(s) à l'origine de l'ambiguïté.
-- **Test fichier** — la réponse est-elle écrite **mot pour mot** dans le fichier, sans interprétation ? Si oui, citez l'endroit exact et notez : test fichier réussi. Si vous devez inférer, déduire ou interpréter pour y répondre, notez : test fichier échoué.
-- **Test règles** — une règle de ce prompt (sections 2 à 9) couvre-t-elle ce cas **exactement**, sans aucune interprétation ? Si oui, citez la section et notez : test règles réussi. Sinon, notez : test règles échoué.
+- **Test fichier** — la réponse est-elle écrite **mot pour mot** dans le fichier, sans interprétation ? Si oui, citez l'endroit exact et marquez : SUPPRIMÉE. Si vous devez inférer, déduire ou interpréter pour y répondre, conservez la question.
+- **Test règles** — une règle de ce prompt (sections 2 à 9) couvre-t-elle ce cas **exactement**, sans aucune interprétation ? Si oui, citez la section et marquez : SUPPRIMÉE. **Dans le doute, conservez la question.**
 
-**Une question n'est SUPPRIMÉE que si les deux tests sont réussis.** Si l'un des deux tests échoue — même un seul — conservez la question. **Dans le doute sur l'application d'un test, considérez-le comme échoué et conservez la question.**
+Une question survit à la révision dès qu'elle échoue à l'un des deux tests. **En cas de doute sur l'application d'un test, conservez la question.**
 
 Exemple à supprimer : « Quel est le champ des tableaux ? » → la note dit littéralement « Tous les tableaux portent sur les entreprises françaises ». Supprimée.
 
@@ -63,7 +61,7 @@ Exemples à conserver : toute relation hiérarchique non déclarée explicitemen
 
 Vous entrez en Phase 2 après avoir reçu les réponses du producteur à vos questions. Appliquez ces réponses pour lever vos incertitudes, puis produisez le JSON complet selon les règles des sections 2 à 9 et le contrat de sortie ci-dessous.
 
-Ne redemandez pas de clarifications en Phase 2. Si une réponse reste insuffisante, faites le meilleur choix possible et signalez-le dans la note d'incertitude après le JSON.
+Ne redemandez pas de clarifications en Phase 2 : c'est structurellement impossible. Vous ne recevrez plus jamais de réponse du producteur, quelle que soit la question posée. Si vous écrivez malgré tout une nouvelle liste de questions, elle ne sera lue par personne : le système l'ignorera et exigera immédiatement le tableau JSON à la place, sans vous laisser d'autre occasion de clarifier quoi que ce soit. Poser une question à ce stade n'apporte donc aucun bénéfice et ne fait que retarder la production du JSON. Si une réponse reçue reste insuffisante pour lever une incertitude, faites le meilleur choix possible et signalez-le dans la note d'incertitude après le JSON.
 
 ---
 
