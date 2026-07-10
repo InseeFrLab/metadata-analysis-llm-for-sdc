@@ -1,139 +1,85 @@
-/* App — orchestrates the four-phase pipeline as an interactive click-through. */
-const ADS = window.SDCMetadataDesignSystem_967a78;
-const { useState: useAppState } = React;
-const STEPS = ["Dépôt", "Questions", "Vérification", "Export"];
+/* Étape 4 — Export du tableau normalisé (.csv pour relecture humaine et rtauargus). */
+const EDS = window.SDCMetadataDesignSystem_967a78;
 
-function Processing({ label }) {
+function Stat({ value, label }) {
   return (
-    <div className="sdc-processing">
-      <span className="sdc-spinner" aria-hidden="true"></span>
-      <p className="sdc-processing__label">{label}</p>
-      <p className="sdc-processing__sub">temperature = 0 · appel au modèle Qwen sur SSP Cloud</p>
+    <div className="sdc-stat">
+      <span className="sdc-stat__value">{value}</span>
+      <span className="sdc-stat__label">{label}</span>
     </div>
   );
 }
 
-function App() {
-  const [step, setStep] = useAppState(0);
-  const [file, setFile] = useAppState(null);
-  const [answers, setAnswers] = useAppState({});
-  const [processing, setProcessing] = useAppState(null);
-  const [sessionId, setSessionId] = useAppState(null);
-  const [questions, setQuestions] = useAppState([]);
-  const [markdown, setMarkdown] = useAppState("");
-  const [records, setRecords] = useAppState([]);
-  const [error, setError] = useAppState(null);
+function StepExport({ records, fileName, sessionId, onRestart }) {
+  const stem = fileName.replace(/\.[^.]+$/, "");
 
-  const reset = () => {
-    setFile(null);
-    setAnswers({});
-    setStep(0);
-    setSessionId(null);
-    setQuestions([]);
-    setMarkdown("");
-    setRecords([]);
-    setError(null);
-  };
-
-  async function handleUpload() {
-    setError(null);
-    setProcessing("Lecture du classeur et analyse des ambiguïtés…");
-    const fd = new FormData();
-    fd.append("file", file.raw);
+  async function download(fmt) {
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Erreur lors de l'envoi du fichier.");
-        setProcessing(null);
-        return;
-      }
-      setSessionId(data.session_id);
-      setMarkdown(data.extracted_markdown || "");
-      setQuestions(data.questions || []);
-      if (data.records && data.records.length > 0) {
-        setRecords(data.records);
-      }
-      setStep(1);
-    } catch (_e) {
-      setError("Impossible de joindre le serveur. Vérifiez que Flask est en cours d'exécution.");
-    }
-    setProcessing(null);
-  }
-
-  async function handleAnswer() {
-    setError(null);
-    setProcessing("Application des réponses et production du JSON…");
-    try {
-      const res = await fetch("/api/answer", {
+      const res = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, answers }),
+        body: JSON.stringify({ session_id: sessionId, format: fmt }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Erreur lors de la production du tableau.");
-        setProcessing(null);
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || `Échec de l'export ${fmt.toUpperCase()}.`);
         return;
       }
-      setRecords(data.normalized_table || []);
-      setStep(2);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${stem}_normalise.${fmt}`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (_e) {
-      setError("Impossible de joindre le serveur.");
+      alert("Impossible de joindre le serveur pour l'export.");
     }
-    setProcessing(null);
   }
 
   return (
-    <Layout>
-      <div className="sdc-container">
-        <div className="sdc-stepper-wrap">
-          <ADS.Stepper steps={STEPS} current={step} />
+    <div className="sdc-step">
+      <div className="sdc-step__intro">
+        <img className="sdc-step__pic" src="../../assets/pictograms/document-download.svg" alt="" aria-hidden="true" />
+        <div>
+          <h1 className="sdc-h1">Tableau prêt à l'export</h1>
+          <p className="sdc-lead">
+            Le tableau normalisé est reproductible : même classeur en entrée → même sortie.
+            Téléchargez-le pour relecture ou pour la pose du secret.
+          </p>
         </div>
-
-        {error && (
-          <div style={{ marginBottom: "1.5rem" }}>
-            <ADS.Alert type="error" title="Une erreur est survenue" onClose={() => setError(null)}>
-              {error}
-            </ADS.Alert>
-          </div>
-        )}
-
-        {processing ? (
-          <Processing label={processing} />
-        ) : step === 0 ? (
-          <StepDepot
-            file={file}
-            onSelect={setFile}
-            onRemove={() => setFile(null)}
-            onNext={handleUpload}
-          />
-        ) : step === 1 ? (
-          <StepQuestions
-            questions={questions}
-            answers={answers}
-            onAnswer={(id, val) => setAnswers((a) => ({ ...a, [id]: val }))}
-            onBack={() => setStep(0)}
-            onNext={handleAnswer}
-          />
-        ) : step === 2 ? (
-          <StepVerification
-            markdown={markdown}
-            records={records}
-            onBack={() => setStep(1)}
-            onNext={() => setStep(3)}
-          />
-        ) : (
-          <StepExport
-            records={records}
-            fileName={file ? file.name : "metadonnees.ods"}
-            sessionId={sessionId}
-            onRestart={reset}
-          />
-        )}
       </div>
-    </Layout>
+
+      <EDS.Alert type="success" title="Pipeline terminé">
+        {records.length} tableau{records.length > 1 ? "x" : ""} normalisé{records.length > 1 ? "s" : ""} et validé{records.length > 1 ? "s" : ""} à partir de <b>{fileName}</b>.
+      </EDS.Alert>
+
+      <div className="sdc-stats">
+        <Stat value={records.length} label={`tableau${records.length > 1 ? "x" : ""}`} />
+        <Stat value="0" label="erreur de schéma" />
+      </div>
+
+      <div className="sdc-export">
+        <EDS.Card
+          title={`${stem}_normalise.csv`}
+          pictogramSrc="../../assets/pictograms/document-download.svg"
+          footer={
+            <EDS.Button size="sm" icon="ri-download-line" onClick={() => download("csv")}>
+              Télécharger le .csv
+            </EDS.Button>
+          }
+        >
+          Tableau plat pour relecture humaine et pour la pose du secret via <b>rtauargus</b> — convention « NA » vs vide.
+        </EDS.Card>
+      </div>
+
+      <div className="sdc-actions">
+        <EDS.Button variant="tertiary" icon="ri-restart-line" onClick={onRestart}>
+          Analyser un autre classeur
+        </EDS.Button>
+      </div>
+    </div>
   );
 }
 
-window.App = App;
+window.StepExport = StepExport;

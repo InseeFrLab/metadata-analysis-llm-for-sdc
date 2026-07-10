@@ -1,98 +1,50 @@
-/* Étape 4 — Export du tableau normalisé (.csv pour relecture, .rds pour rtauargus). */
-const EDS = window.SDCMetadataDesignSystem_967a78;
+/* Étape 3 — Vérification : aperçu Markdown sérialisé + tableau validé contre le schéma. */
+const VDS = window.SDCMetadataDesignSystem_967a78;
 
-function Stat({ value, label }) {
-  return (
-    <div className="sdc-stat">
-      <span className="sdc-stat__value">{value}</span>
-      <span className="sdc-stat__label">{label}</span>
-    </div>
-  );
-}
+const VCOLUMNS = [
+  { key: "table_name",        label: "table_name",        mono: true, width: "8rem" },
+  { key: "field",             label: "field",             mono: true },
+  { key: "hrc_field",         label: "hrc_field",         mono: true, width: "7rem" },
+  { key: "indicator",         label: "indicator",         mono: true },
+  { key: "hrc_indicator",     label: "hrc_indicator",     mono: true, width: "9rem" },
+  { key: "spanning",          label: "spanning_variables", mono: true },
+];
 
-function StepExport({ records, fileName, sessionId, onRestart }) {
-  const stem = fileName.replace(/\.[^.]+$/, "");
-
-  async function download(fmt) {
-    try {
-      const res = await fetch("/api/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, format: fmt }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        alert(data.error || `Échec de l'export ${fmt.toUpperCase()}.`);
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${stem}_normalise.${fmt}`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (_e) {
-      alert("Impossible de joindre le serveur pour l'export.");
-    }
-  }
-
+function StepVerification({ markdown, records, onBack, onNext }) {
   return (
     <div className="sdc-step">
       <div className="sdc-step__intro">
-        <img className="sdc-step__pic" src="../../assets/pictograms/document-download.svg" alt="" aria-hidden="true" />
+        <img className="sdc-step__pic" src="../../assets/pictograms/data-visualization.svg" alt="" aria-hidden="true" />
         <div>
-          <h1 className="sdc-h1">Tableau prêt à l'export</h1>
+          <h1 className="sdc-h1">Vérifiez les tableaux extraits</h1>
           <p className="sdc-lead">
-            Le tableau normalisé est reproductible : même classeur en entrée → même sortie.
-            Téléchargez-le pour relecture ou pour la pose du secret.
+            À gauche, le Markdown exact transmis au modèle. À droite, le tableau normalisé —
+            une ligne par tableau statistique, validé contre le schéma.
           </p>
         </div>
       </div>
 
-      <EDS.Alert type="success" title="Pipeline terminé">
-        {records.length} tableau{records.length > 1 ? "x" : ""} normalisé{records.length > 1 ? "s" : ""} et validé{records.length > 1 ? "s" : ""} à partir de <b>{fileName}</b>.
-      </EDS.Alert>
-
-      <div className="sdc-stats">
-        <Stat value={records.length} label="tableaux" />
-        <Stat value="6" label="colonnes (2n+5)" />
-        <Stat value="0" label="erreur de schéma" />
-        <Stat value="100 %" label="reproductible" />
+      <div className="sdc-verif">
+        <section className="sdc-verif__panel">
+          <h2 className="sdc-panel-title"><i className="ri-markdown-line" aria-hidden="true"></i>Métadonnées sérialisées</h2>
+          <pre className="sdc-md">{markdown}</pre>
+        </section>
+        <section className="sdc-verif__panel">
+          <h2 className="sdc-panel-title"><i className="ri-table-line" aria-hidden="true"></i>Tableau normalisé</h2>
+          <VDS.Alert type="success" small title={`Validé contre le schéma — ${records.length} lignes, aucune erreur.`} />
+          <div style={{ marginTop: "1rem" }}>
+            <VDS.Table columns={VCOLUMNS} rows={records} striped
+              caption="« NA » = attribut sans hiérarchie. spanning_variables ≥ 1 entrée." />
+          </div>
+        </section>
       </div>
 
-      <div className="sdc-export">
-        <EDS.Card
-          title={`${stem}_normalise.csv`}
-          pictogramSrc="../../assets/pictograms/document-download.svg"
-          footer={
-            <EDS.Button size="sm" icon="ri-download-line" onClick={() => download("csv")}>
-              Télécharger le .csv
-            </EDS.Button>
-          }
-        >
-          Tableau plat pour relecture humaine — convention « NA » vs vide.
-        </EDS.Card>
-        <EDS.Card
-          title={`${stem}_normalise.rds`}
-          pictogramSrc="../../assets/pictograms/coding.svg"
-          footer={
-            <EDS.Button size="sm" variant="secondary" icon="ri-download-line" onClick={() => download("rds")}>
-              Télécharger le .rds
-            </EDS.Button>
-          }
-        >
-          Objet R prêt pour <b>rtauargus</b> — NA codés en NA R.
-        </EDS.Card>
-      </div>
-
-      <div className="sdc-actions">
-        <EDS.Button variant="tertiary" icon="ri-restart-line" onClick={onRestart}>
-          Analyser un autre classeur
-        </EDS.Button>
+      <div className="sdc-actions sdc-actions--split">
+        <VDS.Button variant="secondary" icon="ri-arrow-left-line" onClick={onBack}>Retour aux questions</VDS.Button>
+        <VDS.Button icon="ri-check-line" onClick={onNext}>Valider et exporter</VDS.Button>
       </div>
     </div>
   );
 }
 
-window.StepExport = StepExport;
+window.StepVerification = StepVerification;

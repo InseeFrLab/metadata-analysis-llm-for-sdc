@@ -1,134 +1,120 @@
-<!-- @dsCard group="SDC Pipeline" viewport="1280x760" name="Application — pipeline complet" subtitle="Dépôt → Questions → Vérification → Export" -->
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Analyse des métadonnées SDC — Insee</title>
-<link rel="stylesheet" href="../../styles.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
-<style>
-  *, *::before, *::after { box-sizing: border-box; }
-  html, body { margin: 0; }
-  body { background: var(--background-alt); color: var(--text-default); font-family: var(--font-sans); }
+/* Étape 2 — Questions du modèle (boucle humaine). */
+const QDS = window.SDCMetadataDesignSystem_967a78;
+const { useState: useQState } = React;
 
-  .sdc-app { min-height: 100vh; display: flex; flex-direction: column; background: var(--background-alt); }
+function QuestionCard({ q, value, onAnswer }) {
+  const [custom, setCustom] = useQState('');
 
-  /* Skip link */
-  .sdc-skiplink { position: absolute; left: -999px; top: 0; background: var(--background-action-high); color: #fff; padding: 8px 16px; z-index: 100; }
-  .sdc-skiplink:focus { left: 0; }
-
-  /* Header */
-  .sdc-header { background: var(--background-default); border-bottom: 1px solid var(--border-default); box-shadow: var(--shadow-raised); }
-  .sdc-header__inner { max-width: var(--container-max); margin: 0 auto; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
-  .sdc-header__brand { display: flex; align-items: center; gap: 1.25rem; }
-  /* INSEE logo */
-  .sdc-insee-logo-img { height: 48px; width: auto; display: block; }
-  .sdc-insee-logo-img--footer { height: 40px; flex: none; }
-  .sdc-header__sep { width: 1px; height: 40px; background: var(--border-default); }
-  .sdc-header__service { display: flex; flex-direction: column; }
-  .sdc-header__service-name { font-weight: var(--fw-bold); font-size: 1.125rem; color: var(--text-title); }
-  .sdc-header__service-tag { font-size: 0.8125rem; color: var(--text-mention); margin-top: 1px; }
-  .sdc-header__tools { display: flex; gap: 1.25rem; }
-  .sdc-header__tool { display: inline-flex; align-items: center; gap: .375rem; font-size: var(--text-sm); color: var(--text-action-high); text-decoration: none; }
-  .sdc-header__tool:hover { text-decoration: underline; }
-  .sdc-header__tool i { font-size: 1.125rem; }
-
-  /* Main + container */
-  .sdc-main { flex: 1; }
-  .sdc-container { max-width: 72rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-  .sdc-stepper-wrap { background: var(--background-default); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; }
-
-  /* Step shell */
-  .sdc-step { display: flex; flex-direction: column; gap: 1.5rem; }
-  .sdc-step__intro { display: flex; gap: 1.5rem; align-items: flex-start; }
-  .sdc-step__pic { width: 80px; height: 80px; flex: none; }
-  .sdc-h1 { font-size: var(--h2); font-weight: var(--fw-bold); color: var(--text-title); line-height: var(--h2-lh); margin: 0 0 .5rem; }
-  .sdc-lead { font-size: var(--text-lg); line-height: var(--text-lg-lh); color: var(--text-default); margin: 0; max-width: 62ch; }
-  .sdc-lead b { font-weight: var(--fw-bold); color: var(--text-title); }
-
-  .sdc-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: .5rem; }
-  .sdc-actions--split { justify-content: space-between; }
-
-  /* Questions */
-  .sdc-questions { display: flex; flex-direction: column; gap: 1rem; }
-  .sdc-question { background: var(--background-default); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: inset 0 -.1875rem 0 0 var(--background-action-high); }
-  .sdc-question__head { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
-  .sdc-question__cat { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .03em; color: var(--text-mention); font-weight: var(--fw-bold); }
-  .sdc-question__text { font-size: var(--text-lg); color: var(--text-title); line-height: 1.6rem; margin: 0 0 .5rem; }
-  .sdc-question__ref { display: inline-flex; align-items: center; gap: .375rem; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-mention); margin: 0 0 1rem; }
-  .sdc-question__opts { display: flex; gap: .75rem; flex-wrap: wrap; }
-  .sdc-question__custom { margin-top: 1rem; display: flex; flex-direction: column; gap: .375rem; }
-  .sdc-question__custom-label { font-size: var(--text-xs); font-weight: var(--fw-bold); color: var(--text-mention); display: inline-flex; align-items: center; gap: .375rem; }
-  .sdc-question__custom-label i { font-size: .9375rem; }
-  .sdc-question__custom-input { width: 100%; font-family: var(--font-sans); font-size: var(--text-sm); color: var(--text-default); background: var(--background-default); border: 1px solid var(--border-contrast); border-radius: var(--radius-sm); padding: .625rem .75rem; resize: vertical; transition: border-color .15s; }
-  .sdc-question__custom-input:focus { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-color: var(--border-action-high); }
-  .sdc-question__custom-input--active { border-color: var(--border-action-high); background: var(--background-action-low); }
-
-  /* Verification */
-  .sdc-verif { display: grid; grid-template-columns: 5fr 7fr; gap: 1.5rem; align-items: start; }
-  .sdc-verif__panel { background: var(--background-default); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 1.5rem; min-width: 0; }
-  .sdc-panel-title { display: flex; align-items: center; gap: .5rem; font-size: var(--text-md); font-weight: var(--fw-bold); color: var(--text-title); margin: 0 0 1rem; }
-  .sdc-panel-title i { color: var(--text-action-high); font-size: 1.25rem; }
-  .sdc-md { font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.5; color: var(--text-default); background: var(--background-alt); border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: 1rem; margin: 0; white-space: pre-wrap; overflow-x: auto; max-height: 30rem; }
-  .sdc-verif__panel > .ds-alert + div + .ds-alert { margin-top: 1rem; }
-
-  /* Stats */
-  .sdc-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-  .sdc-stat { background: var(--background-default); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: .25rem; }
-  .sdc-stat__value { font-size: var(--h3); font-weight: var(--fw-bold); color: var(--text-action-high); line-height: 1; }
-  .sdc-stat__label { font-size: var(--text-sm); color: var(--text-mention); }
-
-  /* Export */
-  .sdc-export { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-
-  /* Processing */
-  .sdc-processing { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 5rem 1rem; text-align: center; }
-  .sdc-spinner { width: 48px; height: 48px; border: 4px solid var(--background-contrast); border-top-color: var(--background-action-high); border-radius: 50%; animation: sdc-spin .8s linear infinite; }
-  @keyframes sdc-spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .sdc-spinner { animation-duration: 2.4s; } }
-  .sdc-processing__label { font-size: var(--text-lg); font-weight: var(--fw-medium); color: var(--text-title); margin: 0; }
-  .sdc-processing__sub { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-mention); margin: 0; }
-
-  /* Footer */
-  .sdc-footer { background: var(--background-default); border-top: 2px solid var(--background-action-high); margin-top: auto; }
-  .sdc-footer__top { max-width: var(--container-max); margin: 0 auto; padding: 2rem 1.5rem 1rem; display: flex; gap: 2rem; align-items: flex-start; }
-  .sdc-footer__desc { font-size: var(--text-sm); color: var(--text-default); line-height: 1.5rem; margin: 0; max-width: 60ch; }
-  .sdc-footer__desc b { font-family: var(--font-mono); font-weight: var(--fw-regular); }
-  .sdc-footer__links { max-width: var(--container-max); margin: 0 auto; padding: 1rem 1.5rem; list-style: none; display: flex; flex-wrap: wrap; gap: 1.5rem; border-top: 1px solid var(--border-default); }
-  .sdc-footer__links a { font-size: var(--text-sm); font-weight: var(--fw-medium); color: var(--text-title); text-decoration: none; }
-  .sdc-footer__links a:hover { text-decoration: underline; }
-  .sdc-footer__bottom { max-width: var(--container-max); margin: 0 auto; padding: 1rem 1.5rem 2rem; display: flex; flex-wrap: wrap; gap: 1.5rem; border-top: 1px solid var(--border-default); }
-  .sdc-footer__bottom span { font-size: var(--text-xs); color: var(--text-mention); }
-
-  @media (max-width: 62rem) {
-    .sdc-verif { grid-template-columns: 1fr; }
-    .sdc-export { grid-template-columns: 1fr; }
-    .sdc-stats { grid-template-columns: repeat(2, 1fr); }
+  function handleCustomChange(e) {
+    const v = e.target.value;
+    setCustom(v);
+    onAnswer(q.id, v || null);
   }
-  @media (max-width: 48rem) {
-    .sdc-header__inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
-    .sdc-step__intro { flex-direction: column; }
-    .sdc-stats { grid-template-columns: 1fr 1fr; }
-  }
-</style>
-</head>
-<body>
-  <div id="root"></div>
 
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-  <script src="../../_ds_bundle.js"></script>
-  <script src="data.js"></script>
-  <script type="text/babel" src="Shell.jsx"></script>
-  <script type="text/babel" src="StepDepot.jsx"></script>
-  <script type="text/babel" src="StepQuestions.jsx"></script>
-  <script type="text/babel" src="StepVerification.jsx"></script>
-  <script type="text/babel" src="StepExport.jsx"></script>
-  <script type="text/babel" src="App.jsx"></script>
-  <script type="text/babel">
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
-</body>
-</html>
+  function handleOption(opt) {
+    setCustom('');
+    onAnswer(q.id, opt);
+  }
+
+  const isCustomActive = value && !q.options.includes(value);
+
+  return (
+    <div className="sdc-question">
+      <div className="sdc-question__head">
+        <QDS.Badge type="new">Question {q.id}</QDS.Badge>
+        <span className="sdc-question__cat">{q.category}</span>
+      </div>
+      <p className="sdc-question__text">{q.text}</p>
+      <p className="sdc-question__ref"><i className="ri-file-text-line" aria-hidden="true"></i>{q.ref}</p>
+      <div className="sdc-question__opts">
+        {q.options.map((opt) => (
+          <QDS.Tag key={opt} selected={value === opt} onClick={() => handleOption(opt)}>
+            {value === opt ? <i className="ri-check-line" aria-hidden="true"></i> : null}
+            {opt}
+          </QDS.Tag>
+        ))}
+      </div>
+      <div className="sdc-question__custom">
+        <label className="sdc-question__custom-label" htmlFor={`custom-${q.id}`}>
+          <i className="ri-edit-line" aria-hidden="true"></i>
+          Autre réponse
+        </label>
+        <textarea
+          id={`custom-${q.id}`}
+          className={`sdc-question__custom-input${isCustomActive ? ' sdc-question__custom-input--active' : ''}`}
+          placeholder="Saisissez votre réponse si aucune option ci-dessus ne convient…"
+          value={custom}
+          onChange={handleCustomChange}
+          rows={2}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StepQuestions({ questions, answers, onAnswer, onBack, onNext }) {
+  const autoContinued = questions.length === 0;
+  const answered = Object.keys(answers).length;
+  const allDone = autoContinued || answered === questions.length;
+
+  if (autoContinued) {
+    return (
+      <div className="sdc-step">
+        <div className="sdc-step__intro">
+          <img className="sdc-step__pic" src="../../assets/pictograms/document-search.svg" alt="" aria-hidden="true" />
+          <div>
+            <h1 className="sdc-h1">Aucune question nécessaire</h1>
+            <p className="sdc-lead">
+              Le modèle a analysé le classeur et produit directement le tableau normalisé,
+              sans ambiguïté à lever. Vous pouvez passer à la vérification.
+            </p>
+          </div>
+        </div>
+
+        <QDS.Alert type="info" title="Tableau produit automatiquement">
+          Le modèle n'a pas identifié de point d'ambiguïté dans vos métadonnées.
+          Le tableau normalisé a été généré en phase&nbsp;1 — aucune réponse n'est requise.
+        </QDS.Alert>
+
+        <div className="sdc-actions sdc-actions--split">
+          <QDS.Button variant="secondary" icon="ri-arrow-left-line" onClick={onBack}>Retour</QDS.Button>
+          <QDS.Button icon="ri-arrow-right-line" iconRight onClick={onNext}>
+            Vérifier le tableau
+          </QDS.Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sdc-step">
+      <div className="sdc-step__intro">
+        <img className="sdc-step__pic" src="../../assets/pictograms/document-search.svg" alt="" aria-hidden="true" />
+        <div>
+          <h1 className="sdc-h1">Le modèle a {questions.length} question{questions.length > 1 ? "s" : ""}</h1>
+          <p className="sdc-lead">
+            Ces points d'ambiguïté changeraient la valeur d'au moins un champ du tableau final.
+            Répondez pour lever l'incertitude — chaque réponse est appliquée en phase&nbsp;2.
+          </p>
+        </div>
+      </div>
+
+      <QDS.Alert type="info" small title={`${answered} réponse(s) sur ${questions.length} — répondez à toutes pour continuer.`} />
+
+      <div className="sdc-questions">
+        {questions.map((q) => (
+          <QuestionCard key={q.id} q={q} value={answers[q.id]} onAnswer={onAnswer} />
+        ))}
+      </div>
+
+      <div className="sdc-actions sdc-actions--split">
+        <QDS.Button variant="secondary" icon="ri-arrow-left-line" onClick={onBack}>Retour</QDS.Button>
+        <QDS.Button icon="ri-arrow-right-line" iconRight disabled={!allDone} onClick={onNext}>
+          Produire le tableau
+        </QDS.Button>
+      </div>
+    </div>
+  );
+}
+
+window.StepQuestions = StepQuestions;

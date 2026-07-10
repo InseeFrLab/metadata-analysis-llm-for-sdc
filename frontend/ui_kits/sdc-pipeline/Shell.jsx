@@ -1,58 +1,62 @@
-/* Fake data for the SDC pipeline UI kit. Mirrors the real product domain:
-   a metadata workbook → serialized Markdown → questions → validated JSON table. */
-(function () {
-  // Serialized Markdown the model would receive (what the producer previews)
-  const SAMPLE_MARKDOWN = `## Feuille « Demande_CA »  (feuille de demande)
+/* DSFR application shell — gov.fr header (Marianne block-mark + Insee service) and footer. */
+const { useState } = React;
 
-| N° tableau | Champ              | Indicateur   | Activité (NAF) | Taille |
-|------------|--------------------|--------------|----------------|--------|
-| T1         | entreprises FR     | ca_total     | A88            | TREFF  |
-| T2         | entreprises FR     | ca_salades   | niveau division| —      |
-| T3         | entreprises FR     | ca_batavia   | niveau division| —      |
+function Header() {
+  return (
+    <header className="sdc-header" role="banner">
+      <div className="sdc-header__inner">
+        <div className="sdc-header__brand">
+          <img src="../../assets/logo-insee.png" alt="Insee — Mesurer pour comprendre" className="sdc-insee-logo-img" />
+          <div className="sdc-header__sep" aria-hidden="true"></div>
+          <div className="sdc-header__service">
+            <span className="sdc-header__service-name">Analyse des métadonnées</span>
+            <span className="sdc-header__service-tag">Préparer un classeur pour la pose du secret</span>
+          </div>
+        </div>
+        <nav className="sdc-header__tools" aria-label="Outils">
+          <a href="#" className="sdc-header__tool"><i className="ri-question-line" aria-hidden="true"></i>Aide</a>
+          <a href="#" className="sdc-header__tool"><i className="ri-account-circle-line" aria-hidden="true"></i>j.martin@insee.fr</a>
+        </nav>
+      </div>
+    </header>
+  );
+}
 
-> Note : ca_salades et ca_batavia sont deux types de chiffre d'affaires « salades ».
-> Tous les tableaux portent sur les entreprises françaises.
+function Footer() {
+  return (
+    <footer className="sdc-footer" role="contentinfo">
+      <div className="sdc-footer__top">
+        <img src="../../assets/logo-insee.png" alt="Insee" className="sdc-insee-logo-img sdc-insee-logo-img--footer" />
+        <p className="sdc-footer__desc">
+          Outil interne de l'Insee pour normaliser les métadonnées de tableaux statistiques
+          avant la pose du secret via <b>rtauargus</b>.
+        </p>
+      </div>
+      <ul className="sdc-footer__links">
+        <li><a href="#">insee.fr</a></li>
+        <li><a href="#">data.gouv.fr</a></li>
+        <li><a href="#">Documentation rtauargus</a></li>
+        <li><a href="#">Code source</a></li>
+      </ul>
+      <div className="sdc-footer__bottom">
+        <span>© Insee {new Date().getFullYear()}</span>
+        <span>Accessibilité : partiellement conforme</span>
+        <span>Mentions légales</span>
+        <span>Données personnelles</span>
+      </div>
+    </footer>
+  );
+}
 
-## Feuille « Nomenclature_TREFF »  (feuille de référence)
+function Layout({ children }) {
+  return (
+    <div className="sdc-app">
+      <a href="#contenu" className="sdc-skiplink">Aller au contenu</a>
+      <Header />
+      <main id="contenu" className="sdc-main">{children}</main>
+      <Footer />
+    </div>
+  );
+}
 
-| Code | Libellé             |
-|------|---------------------|
-| 0    | 0 salarié           |
-| 1    | 1 à 9 salariés      |
-| 2    | 10 à 49 salariés    |
-| 3    | 50 salariés et plus |`;
-
-  // Phase 1 questions the model asks the producer
-  const QUESTIONS = [
-    {
-      id: 1,
-      category: "Indicateurs et hiérarchies",
-      text: "Pour T2 et T3, « ca_batavia » est-il un composant de « ca_salades », ou une variable indépendante ?",
-      ref: "Feuille Demande_CA · note ligne 5",
-      options: ["Composant de ca_salades", "Variable indépendante"],
-    },
-    {
-      id: 2,
-      category: "Variables de croisement et nomenclatures",
-      text: "La colonne « Taille » de T1 (TREFF) renvoie-t-elle à la nomenclature « Nomenclature_TREFF » fournie dans le classeur ?",
-      ref: "Feuille Demande_CA · colonne Taille",
-      options: ["Oui, la nomenclature fournie", "Non, variable non structurée"],
-    },
-    {
-      id: 3,
-      category: "Champ et population",
-      text: "Le champ « entreprises françaises » s'applique-t-il bien aux trois tableaux, y compris ceux dont la cellule Champ est vide ?",
-      ref: "Feuille Demande_CA · note finale",
-      options: ["Oui, à tous les tableaux", "Non, préciser par tableau"],
-    },
-  ];
-
-  // Phase 2 — validated records (the deliverable)
-  const RECORDS = [
-    { table_name: "T1", field: "entreprises_francaises", hrc_field: "NA", indicator: "ca_total", hrc_indicator: "NA", spanning: "A88 · TREFF" },
-    { table_name: "T2", field: "entreprises_francaises", hrc_field: "NA", indicator: "ca_salades", hrc_indicator: "hrc_salades", spanning: "naf_code" },
-    { table_name: "T3", field: "entreprises_francaises", hrc_field: "NA", indicator: "ca_batavia", hrc_indicator: "hrc_salades", spanning: "naf_code" },
-  ];
-
-  window.SDC_DATA = { SAMPLE_MARKDOWN, QUESTIONS, RECORDS };
-})();
+Object.assign(window, { Header, Footer, Layout });

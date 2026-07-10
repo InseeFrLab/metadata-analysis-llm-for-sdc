@@ -1,62 +1,139 @@
-/* DSFR application shell — gov.fr header (Marianne block-mark + Insee service) and footer. */
-const { useState } = React;
+/* App — orchestrates the four-phase pipeline as an interactive click-through. */
+const ADS = window.SDCMetadataDesignSystem_967a78;
+const { useState: useAppState } = React;
+const STEPS = ["Dépôt", "Questions", "Vérification", "Export"];
 
-function Header() {
+function Processing({ label }) {
   return (
-    <header className="sdc-header" role="banner">
-      <div className="sdc-header__inner">
-        <div className="sdc-header__brand">
-          <img src="../../assets/logo-insee.png" alt="Insee — Mesurer pour comprendre" className="sdc-insee-logo-img" />
-          <div className="sdc-header__sep" aria-hidden="true"></div>
-          <div className="sdc-header__service">
-            <span className="sdc-header__service-name">Analyse des métadonnées</span>
-            <span className="sdc-header__service-tag">Préparer un classeur pour la pose du secret</span>
-          </div>
-        </div>
-        <nav className="sdc-header__tools" aria-label="Outils">
-          <a href="#" className="sdc-header__tool"><i className="ri-question-line" aria-hidden="true"></i>Aide</a>
-          <a href="#" className="sdc-header__tool"><i className="ri-account-circle-line" aria-hidden="true"></i>j.martin@insee.fr</a>
-        </nav>
-      </div>
-    </header>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="sdc-footer" role="contentinfo">
-      <div className="sdc-footer__top">
-        <img src="../../assets/logo-insee.png" alt="Insee" className="sdc-insee-logo-img sdc-insee-logo-img--footer" />
-        <p className="sdc-footer__desc">
-          Outil interne de l'Insee pour normaliser les métadonnées de tableaux statistiques
-          avant la pose du secret via <b>rtauargus</b>.
-        </p>
-      </div>
-      <ul className="sdc-footer__links">
-        <li><a href="#">insee.fr</a></li>
-        <li><a href="#">data.gouv.fr</a></li>
-        <li><a href="#">Documentation rtauargus</a></li>
-        <li><a href="#">Code source</a></li>
-      </ul>
-      <div className="sdc-footer__bottom">
-        <span>© Insee {new Date().getFullYear()}</span>
-        <span>Accessibilité : partiellement conforme</span>
-        <span>Mentions légales</span>
-        <span>Données personnelles</span>
-      </div>
-    </footer>
-  );
-}
-
-function Layout({ children }) {
-  return (
-    <div className="sdc-app">
-      <a href="#contenu" className="sdc-skiplink">Aller au contenu</a>
-      <Header />
-      <main id="contenu" className="sdc-main">{children}</main>
-      <Footer />
+    <div className="sdc-processing">
+      <span className="sdc-spinner" aria-hidden="true"></span>
+      <p className="sdc-processing__label">{label}</p>
+      <p className="sdc-processing__sub">temperature = 0 · appel au modèle Qwen sur SSP Cloud</p>
     </div>
   );
 }
 
-Object.assign(window, { Header, Footer, Layout });
+function App() {
+  const [step, setStep] = useAppState(0);
+  const [file, setFile] = useAppState(null);
+  const [answers, setAnswers] = useAppState({});
+  const [processing, setProcessing] = useAppState(null);
+  const [sessionId, setSessionId] = useAppState(null);
+  const [questions, setQuestions] = useAppState([]);
+  const [markdown, setMarkdown] = useAppState("");
+  const [records, setRecords] = useAppState([]);
+  const [error, setError] = useAppState(null);
+
+  const reset = () => {
+    setFile(null);
+    setAnswers({});
+    setStep(0);
+    setSessionId(null);
+    setQuestions([]);
+    setMarkdown("");
+    setRecords([]);
+    setError(null);
+  };
+
+  async function handleUpload() {
+    setError(null);
+    setProcessing("Lecture du classeur et analyse des ambiguïtés…");
+    const fd = new FormData();
+    fd.append("file", file.raw);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erreur lors de l'envoi du fichier.");
+        setProcessing(null);
+        return;
+      }
+      setSessionId(data.session_id);
+      setMarkdown(data.extracted_markdown || "");
+      setQuestions(data.questions || []);
+      if (data.records && data.records.length > 0) {
+        setRecords(data.records);
+      }
+      setStep(1);
+    } catch (_e) {
+      setError("Impossible de joindre le serveur. Vérifiez que Flask est en cours d'exécution.");
+    }
+    setProcessing(null);
+  }
+
+  async function handleAnswer() {
+    setError(null);
+    setProcessing("Application des réponses et production du JSON…");
+    try {
+      const res = await fetch("/api/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, answers }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erreur lors de la production du tableau.");
+        setProcessing(null);
+        return;
+      }
+      setRecords(data.normalized_table || []);
+      setStep(2);
+    } catch (_e) {
+      setError("Impossible de joindre le serveur.");
+    }
+    setProcessing(null);
+  }
+
+  return (
+    <Layout>
+      <div className="sdc-container">
+        <div className="sdc-stepper-wrap">
+          <ADS.Stepper steps={STEPS} current={step} />
+        </div>
+
+        {error && (
+          <div style={{ marginBottom: "1.5rem" }}>
+            <ADS.Alert type="error" title="Une erreur est survenue" onClose={() => setError(null)}>
+              {error}
+            </ADS.Alert>
+          </div>
+        )}
+
+        {processing ? (
+          <Processing label={processing} />
+        ) : step === 0 ? (
+          <StepDepot
+            file={file}
+            onSelect={setFile}
+            onRemove={() => setFile(null)}
+            onNext={handleUpload}
+          />
+        ) : step === 1 ? (
+          <StepQuestions
+            questions={questions}
+            answers={answers}
+            onAnswer={(id, val) => setAnswers((a) => ({ ...a, [id]: val }))}
+            onBack={() => setStep(0)}
+            onNext={handleAnswer}
+          />
+        ) : step === 2 ? (
+          <StepVerification
+            markdown={markdown}
+            records={records}
+            onBack={() => setStep(1)}
+            onNext={() => setStep(3)}
+          />
+        ) : (
+          <StepExport
+            records={records}
+            fileName={file ? file.name : "metadonnees.ods"}
+            sessionId={sessionId}
+            onRestart={reset}
+          />
+        )}
+      </div>
+    </Layout>
+  );
+}
+
+window.App = App;
