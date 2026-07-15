@@ -44,7 +44,7 @@ function StepExport({ records, fileName, sessionId, onRestart }) {
         <div>
           <h1 className="sdc-h1">Tableau prêt à l'export</h1>
           <p className="sdc-lead">
-            Le tableau normalisé est pret au téléchargement en csv.
+            Le tableau normalisé est prêt au téléchargement en csv.
             Téléchargez-le pour relecture ou pour la pose du secret.
           </p>
         </div>
@@ -68,7 +68,7 @@ function StepExport({ records, fileName, sessionId, onRestart }) {
             </EDS.Button>
           }
         >
-          Tableau plat pour relecture humaine et pour la pose du secret via <b>rtauargus</b> — convention « NA » vs vide.
+          Tableau plat pour relecture et pour la pose du secret via <b>rtauargus</b>.
         </EDS.Card>
       </div>
 

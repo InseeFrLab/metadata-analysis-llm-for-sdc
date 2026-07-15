@@ -63,7 +63,7 @@ function App() {
 
   async function handleAnswer() {
     setError(null);
-    setProcessing("Application des réponses et production du JSON…");
+    setProcessing("Prise en compte des réponses et production du JSON…");
     try {
       const res = await fetch("/api/answer", {
         method: "POST",

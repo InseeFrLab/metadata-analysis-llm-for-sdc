@@ -26,10 +26,9 @@ function StepVerification({ markdown, records, onBack, onNext }) {
       <div className="sdc-verif">
         <section className="sdc-verif__panel">
           <h2 className="sdc-panel-title"><i className="ri-table-line" aria-hidden="true"></i>Tableau normalisé</h2>
-          <VDS.Alert type="success" small title={`Format valide`} />
           <div style={{ marginTop: "1rem" }}>
             <VDS.Table columns={VCOLUMNS} rows={records.slice(0,10)} striped
-              caption="« NA » = attribut sans hiérarchie." />
+              caption="Cet aperçu ne contient que les 10 premières lignes." />
           </div>
         </section>
       </div>

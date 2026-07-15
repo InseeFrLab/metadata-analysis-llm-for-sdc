@@ -32,8 +32,8 @@ function Footer() {
       </div>
       <ul className="sdc-footer__links">
         <li><a href="https://www.insee.fr/fr/accueil">insee.fr</a></li>
-        <li><a href="https://github.com/InseeFrLab/rtauargus.git">Documentation rtauargus</a></li>
-        <li><a href="https://github.com/InseeFrLab/metadata-analysis-llm-for-sdc/tree/2-modifications-jawad">Code source</a></li>
+        <li><a href="https://inseefrlab.github.io/rtauargus/">Documentation rtauargus</a></li>
+        <li><a href="https://github.com/InseeFrLab/metadata-analysis-llm-for-sdc.git">Code source</a></li>
       </ul>
     </footer>
   );

@@ -147,7 +147,7 @@ const CSS = `
 .ds-stepper__seg{height:.5rem;flex:1;background:var(--background-contrast);border-radius:var(--radius-pill);overflow:hidden;}
 .ds-stepper__seg--done{background:var(--background-action-high);}
 .ds-stepper__seg--current{background:var(--background-contrast);position:relative;}
-.ds-stepper__seg--current::before{content:"";position:absolute;inset:0;width:55%;background:var(--background-action-high);border-radius:var(--radius-pill);}
+.ds-stepper__seg--current::before{content:"";position:absolute;inset:0;width:100%;background:var(--background-action-high);border-radius:var(--radius-pill);}
 .ds-stepper__count{font-size:var(--text-xs);font-weight:var(--fw-bold);color:var(--text-mention);text-transform:uppercase;letter-spacing:.03em;}
 .ds-stepper__title{font-size:var(--h4);font-weight:var(--fw-bold);color:var(--text-title);line-height:2rem;margin:0;}
 .ds-stepper__next{font-size:var(--text-sm);color:var(--text-mention);}
