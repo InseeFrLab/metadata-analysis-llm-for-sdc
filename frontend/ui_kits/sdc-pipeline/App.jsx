@@ -8,7 +8,6 @@ function Processing({ label }) {
     <div className="sdc-processing">
       <span className="sdc-spinner" aria-hidden="true"></span>
       <p className="sdc-processing__label">{label}</p>
-      <p className="sdc-processing__sub">temperature = 0 · appel au modèle Qwen sur SSP Cloud</p>
     </div>
   );
 }
