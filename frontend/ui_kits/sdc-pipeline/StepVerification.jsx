@@ -26,10 +26,10 @@ function StepVerification({ markdown, records, onBack, onNext }) {
       <div className="sdc-verif">
         <section className="sdc-verif__panel">
           <h2 className="sdc-panel-title"><i className="ri-table-line" aria-hidden="true"></i>Tableau normalisé</h2>
-          <VDS.Alert type="success" small title={`Validé contre le schéma — ${records.length} lignes, aucune erreur.`} />
+          <VDS.Alert type="success" small title={`Format valide`} />
           <div style={{ marginTop: "1rem" }}>
-            <VDS.Table columns={VCOLUMNS} rows={records} striped
-              caption="« NA » = attribut sans hiérarchie. spanning_variables ≥ 1 entrée." />
+            <VDS.Table columns={VCOLUMNS} rows={records.slice(0,10)} striped
+              caption="« NA » = attribut sans hiérarchie." />
           </div>
         </section>
       </div>

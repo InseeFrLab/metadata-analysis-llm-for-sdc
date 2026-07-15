@@ -8,6 +8,7 @@ function Processing({ label }) {
     <div className="sdc-processing">
       <span className="sdc-spinner" aria-hidden="true"></span>
       <p className="sdc-processing__label">{label}</p>
+      <p className="sdc-processing__sub">Cette étape peut prendre du temps, merci de votre patience...</p>
     </div>
   );
 }
