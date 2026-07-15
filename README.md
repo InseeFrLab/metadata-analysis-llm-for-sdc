@@ -9,7 +9,7 @@ pipeline produit un tableau plat normalisé (`.csv` pour relecture humaine, `.rd
 
 ---
 
-# Getting started
+# Comment lancer l'application
 
 ## Sur SSP Cloud (Onyxia)
 
@@ -38,11 +38,3 @@ uv run python app.py
 ```{bash}
 uv run python main.py
 ```
-
-## Notebook
-
-Pour activer l'exécution interactive du code, pointe VSCode vers l'environnement virtuel du projet :
-
-1. Ouvre la palette de commandes avec Ctrl+Shift+P (Windows/Linux) ou Cmd+Shift+P (Mac)
-2. Recherche et lance >Python: Select Interpreter
-3. Choisis Enter interpreter path… et entre : /home/onyxia/work/funathon-project3/.venv/bin/python
