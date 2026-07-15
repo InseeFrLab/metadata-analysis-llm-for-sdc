@@ -20,7 +20,12 @@ Lisez le fichier entièrement. Appliquez les règles des sections 2 à 9 pour co
 
 **Structure de sortie de la Phase 1 — unique et obligatoire :**
 
-**Uniquement** la liste finale des questions, regroupées par catégorie. Rien d'autre — pas de prose, pas de résumé, pas de JSON. Arrêtez-vous ici et attendez les réponses du producteur.
+Après vos notes de travail et la ligne séparatrice `---`, produisez **uniquement** un tableau JSON pur — premier caractère `[`, dernier caractère `]`, sans prose, sans markdown, sans texte avant ou après. Un objet par question :
+
+```json
+[
+  { "category": "Champ et population", "text": "Pour T9, `ca_batavia` est-il un composant de `ca_salades`, ou une variable indépendante ?" }
+]
 
 **Critère pour poser une question — une seule condition :**
 - La réponse changerait la valeur d'au moins un champ du JSON final.
@@ -28,13 +33,12 @@ Lisez le fichier entièrement. Appliquez les règles des sections 2 à 9 pour co
 **Posture par défaut : posez la question.** Il vaut mieux poser une question de trop qu'une de moins. N'omettez une question que si vous êtes absolument certain (99 %+) de la réponse — c'est-à-dire si elle est écrite noir sur blanc dans le fichier, sans aucune interprétation de votre part.
 
 **Formulation :**
-- Numérotées en continu (1, 2, 3, …) sur l'ensemble des catégories.
 - Courte et directe.
 - En français.
 - Avec une référence précise au contenu du fichier lorsque c'est utile : nom de variable, libellé exact, numéro de tableau (ex. : « Pour T9, `ca_batavia` est-il un composant de `ca_salades`, ou une variable indépendante ? »).
 - Une question = un point d'ambiguïté. Ne combinez pas deux ambiguïtés dans une seule question.
 
-**Catégories.** Regroupez les questions sous les intitulés suivants. N'incluez une catégorie que si elle contient au moins une question :
+**Catégories.** Chaque question porte l'une des quatre valeurs suivantes dans son champ `category` :
 
 1. Champ et population
 2. Indicateurs et hiérarchies

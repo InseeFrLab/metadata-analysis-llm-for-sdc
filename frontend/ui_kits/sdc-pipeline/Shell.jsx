@@ -14,8 +14,6 @@ function Header() {
           </div>
         </div>
         <nav className="sdc-header__tools" aria-label="Outils">
-          <a href="#" className="sdc-header__tool"><i className="ri-question-line" aria-hidden="true"></i>Aide</a>
-          <a href="#" className="sdc-header__tool"><i className="ri-account-circle-line" aria-hidden="true"></i>j.martin@insee.fr</a>
         </nav>
       </div>
     </header>
@@ -33,17 +31,10 @@ function Footer() {
         </p>
       </div>
       <ul className="sdc-footer__links">
-        <li><a href="#">insee.fr</a></li>
-        <li><a href="#">data.gouv.fr</a></li>
-        <li><a href="#">Documentation rtauargus</a></li>
-        <li><a href="#">Code source</a></li>
+        <li><a href="https://www.insee.fr/fr/accueil">insee.fr</a></li>
+        <li><a href="https://github.com/InseeFrLab/rtauargus.git">Documentation rtauargus</a></li>
+        <li><a href="https://github.com/InseeFrLab/metadata-analysis-llm-for-sdc/tree/2-modifications-jawad">Code source</a></li>
       </ul>
-      <div className="sdc-footer__bottom">
-        <span>© Insee {new Date().getFullYear()}</span>
-        <span>Accessibilité : partiellement conforme</span>
-        <span>Mentions légales</span>
-        <span>Données personnelles</span>
-      </div>
     </footer>
   );
 }

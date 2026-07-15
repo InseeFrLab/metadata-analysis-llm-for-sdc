@@ -44,7 +44,7 @@ function StepExport({ records, fileName, sessionId, onRestart }) {
         <div>
           <h1 className="sdc-h1">Tableau prêt à l'export</h1>
           <p className="sdc-lead">
-            Le tableau normalisé est reproductible : même classeur en entrée → même sortie.
+            Le tableau normalisé est pret au téléchargement en csv.
             Téléchargez-le pour relecture ou pour la pose du secret.
           </p>
         </div>
@@ -56,7 +56,6 @@ function StepExport({ records, fileName, sessionId, onRestart }) {
 
       <div className="sdc-stats">
         <Stat value={records.length} label={`tableau${records.length > 1 ? "x" : ""}`} />
-        <Stat value="0" label="erreur de schéma" />
       </div>
 
       <div className="sdc-export">

@@ -97,7 +97,7 @@ def _csv_cols_rows(records: list):
                rec["indicator"], rec["hrc_indicator"]]
         pairs = _spanning_pairs(rec)
         for i in range(n_span):
-            code, hrc = pairs[i] if i < len(pairs) else ("", "")
+            code, hrc = pairs[i] if i < len(pairs) else ("NA", "NA")
             row += [code, hrc]
         rows.append(row)
     return cols, rows
@@ -155,6 +155,7 @@ def upload_metadata():
     ]
     try:
         reply = LLM_API_call.chat(history)
+        print("=== RAW REPLY ===\n", reply, "\n =============")
     except Exception as exc:
         return jsonify({"error": _llm_error_message(exc)}), 502
     history.append({"role": "assistant", "content": reply})
@@ -278,8 +279,13 @@ def export_table():
 # Helpers
 # ---------------------------------------------------------------------------
 
-_CAT_RE = re.compile(r"^#+\s*\d+\.\s+(.+)$")
 _Q_RE = re.compile(r"^\s*(\d+)\.\s+(.+)$")
+_KNOWN_CATEGORIES = {
+    "champ et population",
+    "indicateurs et hiérarchies",
+    "variables de croisement et nomenclatures",
+    "structure des tableaux",
+}
 
 
 def _llm_error_message(exc: Exception) -> str:
@@ -302,23 +308,29 @@ def _llm_error_message(exc: Exception) -> str:
 
 
 def _parse_questions(text: str) -> list:
-    """Parse the LLM's free-text question block into structured dicts the UI expects."""
-    questions, category = [], "Général"
-    for line in text.splitlines():
-        line = line.strip()
-        if m := _CAT_RE.match(line):
-            category = m.group(1).strip()
+    """Parse the LLM's Phase 1 JSON question array into structured dicts the UI expects."""
+    raw = extract_array(text)
+    if raw is None:
+        return []
+
+    questions = []
+    for item in raw:
+        if not isinstance(item, dict):
             continue
-        if m := _Q_RE.match(line):
-            t = m.group(2).strip()
-            ref_m = re.search(r"[Ff]euille\s+\S+|T\d+", t)
-            questions.append({
-                "id": str(len(questions) + 1),
-                "text": t,
-                "category": category,
-                "ref": ref_m.group(0) if ref_m else category,
-                "options": [],
-            })
+        t = str(item.get("text", "")).strip()
+        if not t:
+            continue
+        category = str(item.get("category", "")).strip()
+        if category.lower() not in _KNOWN_CATEGORIES:
+            category = "Général"
+        ref_m = re.search(r"[Ff]euille\s+\S+|T\d+", t)
+        questions.append({
+            "id": str(len(questions) + 1),
+            "text": t,
+            "category": category,
+            "ref": ref_m.group(0) if ref_m else category,
+            "options": [],
+        })
     return questions
 
 

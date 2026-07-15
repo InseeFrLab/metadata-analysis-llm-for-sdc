@@ -18,17 +18,12 @@ function StepVerification({ markdown, records, onBack, onNext }) {
         <div>
           <h1 className="sdc-h1">Vérifiez les tableaux extraits</h1>
           <p className="sdc-lead">
-            À gauche, le Markdown exact transmis au modèle. À droite, le tableau normalisé —
-            une ligne par tableau statistique, validé contre le schéma.
+            Aperçu du tableau normalisé
           </p>
         </div>
       </div>
 
       <div className="sdc-verif">
-        <section className="sdc-verif__panel">
-          <h2 className="sdc-panel-title"><i className="ri-markdown-line" aria-hidden="true"></i>Métadonnées sérialisées</h2>
-          <pre className="sdc-md">{markdown}</pre>
-        </section>
         <section className="sdc-verif__panel">
           <h2 className="sdc-panel-title"><i className="ri-table-line" aria-hidden="true"></i>Tableau normalisé</h2>
           <VDS.Alert type="success" small title={`Validé contre le schéma — ${records.length} lignes, aucune erreur.`} />
