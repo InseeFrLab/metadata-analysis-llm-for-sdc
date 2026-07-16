@@ -5,7 +5,7 @@ tableaux statistiques, et les rendre exploitables par l'analyse automatique et l
 via **rtauargus**.
 
 À partir d'un classeur de métadonnées (un producteur décrit les tableaux qu'il demande), le
-pipeline produit un tableau plat normalisé (`.csv` pour relecture humaine, `.rds` pour rtauargus).
+pipeline produit un tableau plat normalisé.
 
 ---
 
