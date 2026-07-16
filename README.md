@@ -34,6 +34,7 @@ uv run python app.py
 **Important**: Quand l'application est lancée : ne pas cliquer sur le popup de VSCode. Retourner sur « Mes services » dans Onyxia, cliquer sur « Ouvrir » pour le service en cours, puis cliquer sur « ce lien » après « Vous pouvez vous connecter à votre port personnalisé (5000) en utilisant ce lien ».
 
 !! Ce pipeline n'est pas encore équipé pour traiter de tous les cas, si vous avez configuré votre service correctement et que vous voyez une erreur apparaître, cliquez à nouveau sur le bouton de la phase où vous êtes !!
+
 ## Command-line Interface
 
 ```{bash}
