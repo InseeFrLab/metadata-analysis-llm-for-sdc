@@ -154,7 +154,7 @@ def upload_metadata():
         {"role": "user", "content": wrap(md)},
     ]
     try:
-        reply = LLM_API_call.chat(history)
+        reply = _chat_with_retry(history)
         print("=== RAW REPLY ===\n", reply, "\n =============")
     except Exception as exc:
         return jsonify({"error": _llm_error_message(exc)}), 502
@@ -203,12 +203,11 @@ def upload_metadata():
 
 @app.route("/api/answer", methods=["POST"])
 def submit_answers():
-    """Step 2: receive producer answers, run Phase 2, return validated table."""
     data = request.get_json(force=True) or {}
     session_id = data.get("session_id", "")
     sess = sessions.get(session_id)
     if not sess:
-        return jsonify({"error": "Session introuvable"}), 404
+        return jsonify({"error": "Session expirée côté serveur", "code": "session_expired"}), 410
 
     if sess["records"] is not None:
         return jsonify({"status": "ok", "normalized_table": _records_to_ui(sess["records"])})
@@ -305,6 +304,22 @@ def _llm_error_message(exc: Exception) -> str:
     if "Authentication" in name or "PermissionDenied" in name:
         return f"Authentification refusée par le serveur LLM : {exc}"
     return f"Erreur lors de l'appel au modèle ({name}) : {exc}"
+
+
+def _chat_with_retry(history, attempts=2):
+    """Retry only on transient network/timeout errors — never on a bad
+    (but successfully returned) reply; that's a 422 problem, not a retry one."""
+    last_exc = None
+    for i in range(attempts):
+        try:
+            return LLM_API_call.chat(history)
+        except Exception as exc:
+            name = type(exc).__name__
+            if "Connection" in name or "Timeout" in name:
+                last_exc = exc
+                continue
+            raise
+    raise last_exc
 
 
 def _parse_questions(text: str) -> list:

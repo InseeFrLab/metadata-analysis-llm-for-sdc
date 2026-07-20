@@ -45,20 +45,6 @@ Après vos notes de travail et la ligne séparatrice `---`, produisez **uniqueme
 3. Variables de croisement et nomenclatures
 4. Structure des tableaux
 
-**Étape de révision — obligatoire avant d'émettre les questions.**
-
-Dans vos notes de travail, écrivez pour **chaque question candidate** trois lignes :
-
-- **Source** — feuille et cellule(s) à l'origine de l'ambiguïté.
-- **Test fichier** — la réponse est-elle écrite **mot pour mot** dans le fichier, sans interprétation ? Si oui, citez l'endroit exact et marquez : SUPPRIMÉE. Si vous devez inférer, déduire ou interpréter pour y répondre, conservez la question.
-- **Test règles** — une règle de ce prompt (sections 2 à 9) couvre-t-elle ce cas **exactement**, sans aucune interprétation ? Si oui, citez la section et marquez : SUPPRIMÉE. **Dans le doute, conservez la question.**
-
-Une question survit à la révision dès qu'elle échoue à l'un des deux tests. **En cas de doute sur l'application d'un test, conservez la question.**
-
-Exemple à supprimer : « Quel est le champ des tableaux ? » → la note dit littéralement « Tous les tableaux portent sur les entreprises françaises ». Supprimée.
-
-Exemples à conserver : toute relation hiérarchique non déclarée explicitement, toute abréviation dont le sens n'est pas écrit dans le fichier, toute variable dont la portée exacte est ambiguë — même si une interprétation vous semble probable.
-
 ---
 
 ## Phase 2 — Production du JSON
