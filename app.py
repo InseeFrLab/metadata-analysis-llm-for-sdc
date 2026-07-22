@@ -209,14 +209,24 @@ def submit_answers():
     if not sess:
         return jsonify({"error": "Session expirée côté serveur", "code": "session_expired"}), 410
 
-    if sess["records"] is not None:
+    extra_info = str(data.get("extra_info", "")).strip()
+
+    # Fast path: Phase 1 already produced the table (auto-continued) and the
+    # producer didn't add anything new — nothing to send to the model.
+    if sess["records"] is not None and not extra_info:
         return jsonify({"status": "ok", "normalized_table": _records_to_ui(sess["records"])})
 
     answers = data.get("answers", {})
-    answers_text = _format_answers(sess["questions"], answers)
+    answers_text = _format_answers(sess["questions"], answers, extra_info)
 
     # Phase 2 (main.py lines 57–70): apply answers, then force JSON if the model re-asks.
-    history = sess["history"]
+    # Work on a local copy of the history and only commit it to the session once
+    # the whole exchange succeeds. If sess["history"] were mutated up front, a
+    # timeout/failure would leave a dangling, unanswered "user" turn in it — and
+    # the next retry would append yet another one on top, corrupting the
+    # conversation sent to the model. Committing only on success means a retry
+    # always starts from the same clean state as the first attempt.
+    history = list(sess["history"])
     history.append({"role": "user", "content": answers_text})
     try:
         reply = LLM_API_call.chat(history)
@@ -235,6 +245,7 @@ def submit_answers():
     if errors:
         return jsonify({"error": "Validation du schéma échouée :\n" + "\n".join(errors)}), 422
 
+    sess["history"] = history
     sess["records"] = records
     return jsonify({"status": "ok", "normalized_table": _records_to_ui(records)})
 
@@ -349,13 +360,20 @@ def _parse_questions(text: str) -> list:
     return questions
 
 
-def _format_answers(questions: list, answers: dict) -> str:
-    """Reconstruct the numbered answer text Phase 2 expects."""
+def _format_answers(questions: list, answers: dict, extra_info: str = "") -> str:
+    """Reconstruct the numbered answer text Phase 2 expects, plus any free-text
+    context the producer added beyond the model's specific questions."""
     lines = []
     for q in questions:
         ans = answers.get(str(q["id"]), "").strip()
         if ans:
             lines.append(f"{q['id']}. {ans}")
+    extra = (extra_info or "").strip()
+    if extra:
+        if lines:
+            lines.append("")
+        lines.append("Informations complémentaires du producteur :")
+        lines.append(extra)
     return "\n".join(lines)
 
 

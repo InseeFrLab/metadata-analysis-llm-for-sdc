@@ -17,6 +17,7 @@ function App() {
   const [step, setStep] = useAppState(0);
   const [file, setFile] = useAppState(null);
   const [answers, setAnswers] = useAppState({});
+  const [extraInfo, setExtraInfo] = useAppState("");
   const [processing, setProcessing] = useAppState(null);
   const [sessionId, setSessionId] = useAppState(null);
   const [questions, setQuestions] = useAppState([]);
@@ -27,6 +28,7 @@ function App() {
   const reset = () => {
     setFile(null);
     setAnswers({});
+    setExtraInfo("");
     setStep(0);
     setSessionId(null);
     setQuestions([]);
@@ -37,6 +39,10 @@ function App() {
 
   async function handleUpload() {
     setError(null);
+    setAnswers({});
+    setExtraInfo("");
+    setQuestions([]);
+    setRecords([]);
     setProcessing("Lecture du classeur et analyse des ambiguïtés…");
     const fd = new FormData();
     fd.append("file", file.raw);
@@ -68,10 +74,16 @@ function App() {
       const res = await fetch("/api/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, answers }),
+        body: JSON.stringify({ session_id: sessionId, answers, extra_info: extraInfo }),
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data.code === "session_expired") {
+          reset();
+          setError("Votre session a expiré côté serveur — veuillez déposer le fichier à nouveau.");
+          setProcessing(null);
+          return;
+        }
         setError(data.error || "Erreur lors de la production du tableau.");
         setProcessing(null);
         return;
@@ -113,6 +125,8 @@ function App() {
             questions={questions}
             answers={answers}
             onAnswer={(id, val) => setAnswers((a) => ({ ...a, [id]: val }))}
+            extraInfo={extraInfo}
+            onExtraInfoChange={setExtraInfo}
             onBack={() => setStep(0)}
             onNext={handleAnswer}
           />

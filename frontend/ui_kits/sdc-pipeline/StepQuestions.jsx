@@ -3,7 +3,8 @@ const QDS = window.SDCMetadataDesignSystem_967a78;
 const { useState: useQState } = React;
 
 function QuestionCard({ q, value, onAnswer }) {
-  const [custom, setCustom] = useQState('');
+  const isPreset = value && q.options.includes(value);
+  const [custom, setCustom] = useQState(isPreset ? '' : (value || ''));
 
   function handleCustomChange(e) {
     const v = e.target.value;
@@ -52,7 +53,30 @@ function QuestionCard({ q, value, onAnswer }) {
   );
 }
 
-function StepQuestions({ questions, answers, onAnswer, onBack, onNext }) {
+function ExtraInfoBox({ value, onChange }) {
+  return (
+    <div className="sdc-extra-info">
+      <label className="sdc-extra-info__label" htmlFor="sdc-extra-info-input">
+        <i className="ri-sticky-note-line" aria-hidden="true"></i>
+        Informations complémentaires <span className="sdc-extra-info__optional">(optionnel)</span>
+      </label>
+      <p className="sdc-extra-info__hint">
+        Ajoutez tout élément de contexte utile que les questions ci-dessus ne couvrent pas.
+        Ce texte est transmis au modèle avec vos réponses.
+      </p>
+      <textarea
+        id="sdc-extra-info-input"
+        className="sdc-extra-info__input"
+        placeholder="Par ex. précisions sur une variable, un cas particulier, une exception métier…"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={3}
+      />
+    </div>
+  );
+}
+
+function StepQuestions({ questions, answers, onAnswer, extraInfo, onExtraInfoChange, onBack, onNext }) {
   const autoContinued = questions.length === 0;
   const answered = Object.keys(answers).length;
   const allDone = autoContinued || answered === questions.length;
@@ -75,6 +99,8 @@ function StepQuestions({ questions, answers, onAnswer, onBack, onNext }) {
           Le modèle n'a pas identifié de point d'ambiguïté dans vos métadonnées.
           Le tableau normalisé a été généré en phase&nbsp;1 — aucune réponse n'est requise.
         </QDS.Alert>
+
+        <ExtraInfoBox value={extraInfo} onChange={onExtraInfoChange} />
 
         <div className="sdc-actions sdc-actions--split">
           <QDS.Button variant="secondary" icon="ri-arrow-left-line" onClick={onBack}>Retour</QDS.Button>
@@ -106,6 +132,8 @@ function StepQuestions({ questions, answers, onAnswer, onBack, onNext }) {
           <QuestionCard key={q.id} q={q} value={answers[q.id]} onAnswer={onAnswer} />
         ))}
       </div>
+
+      <ExtraInfoBox value={extraInfo} onChange={onExtraInfoChange} />
 
       <div className="sdc-actions sdc-actions--split">
         <QDS.Button variant="secondary" icon="ri-arrow-left-line" onClick={onBack}>Retour</QDS.Button>
