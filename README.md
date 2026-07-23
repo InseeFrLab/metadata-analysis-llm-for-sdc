@@ -49,5 +49,7 @@ Pour créer un token GitHub, allez dans les paramètres de votre compte, sélect
 ## Command-line Interface
 
 ```{bash}
-uv run python main.py
+uv run python main.py your_input_file.ods -o your_output_file.csv
 ```
+
+! This command runs the pipeline and saves the result inside metadata-analysis-llm-for-sdc
