@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Flask server — serves the DSFR pipeline UI and drives the src/ LLM pipeline.
 
-Run:
-    python app.py
+Run (from the project root):
+    python backend/app.py
     # open http://127.0.0.1:5000/
 
 Offline stub (no LLM key needed — replaces the src chat() with a saved reply):
-    SDC_STUB_REPLY=path/to/saved_reply.txt python app.py
+    SDC_STUB_REPLY=path/to/saved_reply.txt python backend/app.py
 """
 
 import csv
@@ -27,22 +27,24 @@ from src.extract_JSON_array import extract_array
 from src.validate_json_output import validate
 from src.transform_output import HEADER_BASE, _spanning_pairs, max_spanning
 
-# Ensure the project root is importable (so `src` resolves) regardless of cwd.
-_ROOT = Path(__file__).parent
-sys.path.insert(0, str(_ROOT))
+# Ensure backend/ is importable (so `src` resolves) regardless of cwd. This must
+# run before the `from src …` imports below, which is why it sits above them.
+_BACKEND = Path(__file__).parent
+_PROJECT_ROOT = _BACKEND.parent
+sys.path.insert(0, str(_BACKEND))
 
 # ---------------------------------------------------------------------------
-# Flask app — the frontend/ folder is the static root, so index.html's
-# "../../styles.css" / "../../_ds_bundle.js" / "../../assets/…" resolve to the
-# real files under frontend/.
+# Flask app — frontend/ is a sibling of backend/ at the project root, and is the
+# static root, so index.html's "../../styles.css" / "../../_ds_bundle.js" /
+# "../../assets/…" resolve to the real files under frontend/.
 # ---------------------------------------------------------------------------
-app = Flask(__name__, static_folder=str(_ROOT / "frontend"), static_url_path="")
+app = Flask(__name__, static_folder=str(_PROJECT_ROOT / "frontend"), static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
-app.config["UPLOAD_FOLDER"] = _ROOT / "uploads" / "temp"
+app.config["UPLOAD_FOLDER"] = _PROJECT_ROOT / "uploads" / "temp"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # System prompt driving the two-phase pipeline (read once at startup).
-PROMPT = (_ROOT / "src" / "prompts" / "prompt_questions.md").read_text(encoding="utf-8")
+PROMPT = (_BACKEND / "src" / "prompts" / "prompt_questions.md").read_text(encoding="utf-8")
 
 # ---------------------------------------------------------------------------
 # Offline stub — set SDC_STUB_REPLY to a saved LLM reply path to bypass the

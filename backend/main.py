@@ -1,5 +1,6 @@
 import argparse
 import csv
+from pathlib import Path
 
 from src.data import read_file
 from src.clean import _dataframe_to_rows, clean_sheet
@@ -8,6 +9,9 @@ from src.LLM_API_call import chat, is_auto_continued, FORCE_JSON_INSTRUCTION
 from src.extract_JSON_array import extract_array
 from src.validate_json_output import validate
 from src.transform_output import _spanning_pairs, max_spanning, HEADER_BASE
+
+# Resolved relative to this file, not the cwd, so the CLI works from anywhere.
+DEFAULT_PROMPT = Path(__file__).parent / "src" / "prompts" / "prompt_questions.md"
 
 
 def read_producer_answers():
@@ -26,7 +30,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Preliminary SDC metadata pipeline driver.")
     p.add_argument("input", help="metadata workbook (.ods/.xlsx/.csv)")
     p.add_argument("-o", "--output", required=True, help="output CSV path")
-    p.add_argument("--prompt", default="src/prompts/prompt_questions.md",
+    p.add_argument("--prompt", default=str(DEFAULT_PROMPT),
                    help="chemin du prompt systeme")
     args = p.parse_args()
 

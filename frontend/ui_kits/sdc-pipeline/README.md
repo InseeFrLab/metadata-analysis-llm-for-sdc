@@ -2,7 +2,7 @@
 
 Interface DSFR (React via Babel standalone, sans build) pour le pipeline d'analyse des
 métadonnées SDC. Elle guide un agent à travers les quatre étapes du pipeline et dialogue
-avec le backend Flask (`app.py`, servi depuis `frontend/`).
+avec le backend Flask (`backend/app.py`, servi depuis `frontend/`).
 
 ## Étapes
 
@@ -27,5 +27,5 @@ Les composants du design system (`Button`, `Card`, `Stepper`, `Table`, `Alert`, 
 ## Lancer
 
 ```bash
-uv run python app.py   # puis http://127.0.0.1:5000/
+uv run python backend/app.py   # puis http://127.0.0.1:5000/
 ```

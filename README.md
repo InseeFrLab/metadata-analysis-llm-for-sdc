@@ -28,7 +28,7 @@ uv sync
 # Lancer l'app
 
 ```{bash}
-uv run python app.py
+uv run python backend/app.py
 ```
 
 **Important**: Quand l'application est lancée : ne pas cliquer sur le popup de VSCode. Retourner sur « Mes services » dans Onyxia, cliquer sur « Ouvrir » pour le service en cours, puis cliquer sur « ce lien » après « Vous pouvez vous connecter à votre port personnalisé (5000) en utilisant ce lien ».
@@ -49,7 +49,7 @@ Pour créer un token GitHub, allez dans les paramètres de votre compte, sélect
 ## Command-line Interface
 
 ```{bash}
-uv run python main.py your_input_file.ods -o your_output_file.csv
+uv run python backend/main.py your_input_file.ods -o your_output_file.csv
 ```
 
 ! This command runs the pipeline and saves the result inside metadata-analysis-llm-for-sdc
