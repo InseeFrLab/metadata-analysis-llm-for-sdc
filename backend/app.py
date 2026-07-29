@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-"""Flask server — serves the DSFR pipeline UI and drives the src/ LLM pipeline.
-
-Run (from the project root):
-    python backend/app.py
-    # open http://127.0.0.1:5000/
-
-Offline stub (no LLM key needed — replaces the src chat() with a saved reply):
-    SDC_STUB_REPLY=path/to/saved_reply.txt python backend/app.py
-"""
-
 import csv
 import io
 import json
@@ -26,9 +15,6 @@ from flask import (
     send_file,
     stream_with_context,
 )
-from werkzeug.exceptions import RequestEntityTooLarge
-from werkzeug.utils import secure_filename
-
 from src import LLM_API_call
 from src.clean import _dataframe_to_rows, clean_sheet
 from src.data import read_file
@@ -37,6 +23,8 @@ from src.LLM_API_call import FORCE_JSON_INSTRUCTION, is_auto_continued
 from src.transform_input import to_markdown, wrap
 from src.transform_output import HEADER_BASE, _spanning_pairs, max_spanning
 from src.validate_json_output import validate
+from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.utils import secure_filename
 
 # `python backend/app.py` puts backend/ at sys.path[0] automatically, so `src`
 # resolves with no manual sys.path handling — this is just for building paths.
@@ -399,7 +387,7 @@ def _chat_with_retry(history, attempts=2):
         try:
             return LLM_API_call.chat(history)
         # Inspects type(exc).__name__ below to decide retry vs re-raise.
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             name = type(exc).__name__
             if "Connection" in name or "Timeout" in name:
                 last_exc = exc
