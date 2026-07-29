@@ -49,8 +49,8 @@ function App() {
     try {
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Erreur lors de l'envoi du fichier.");
+      if (data.error) {
+        setError(data.error);
         setProcessing(null);
         return;
       }
@@ -77,14 +77,14 @@ function App() {
         body: JSON.stringify({ session_id: sessionId, answers, extra_info: extraInfo }),
       });
       const data = await res.json();
-      if (!res.ok) {
+      if (data.error) {
         if (data.code === "session_expired") {
           reset();
           setError("Votre session a expiré côté serveur — veuillez déposer le fichier à nouveau.");
           setProcessing(null);
           return;
         }
-        setError(data.error || "Erreur lors de la production du tableau.");
+        setError(data.error);
         setProcessing(null);
         return;
       }

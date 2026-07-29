@@ -11,40 +11,53 @@ Offline stub (no LLM key needed — replaces the src chat() with a saved reply):
 
 import csv
 import io
+import json
 import os
 import re
-import sys
+import threading
 from pathlib import Path
-from flask import Flask, jsonify, redirect, request, send_file
+
+from flask import (
+    Flask,
+    Response,
+    jsonify,
+    redirect,
+    request,
+    send_file,
+    stream_with_context,
+)
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.utils import secure_filename
-from src import LLM_API_call
-from src.data import read_file
-from src.clean import _dataframe_to_rows, clean_sheet
-from src.transform_input import wrap, to_markdown
-from src.LLM_API_call import is_auto_continued, FORCE_JSON_INSTRUCTION
-from src.extract_JSON_array import extract_array
-from src.validate_json_output import validate
-from src.transform_output import HEADER_BASE, _spanning_pairs, max_spanning
 
-# Ensure backend/ is importable (so `src` resolves) regardless of cwd. This must
-# run before the `from src …` imports below, which is why it sits above them.
+from src import LLM_API_call
+from src.clean import _dataframe_to_rows, clean_sheet
+from src.data import read_file
+from src.extract_JSON_array import extract_array
+from src.LLM_API_call import FORCE_JSON_INSTRUCTION, is_auto_continued
+from src.transform_input import to_markdown, wrap
+from src.transform_output import HEADER_BASE, _spanning_pairs, max_spanning
+from src.validate_json_output import validate
+
+# `python backend/app.py` puts backend/ at sys.path[0] automatically, so `src`
+# resolves with no manual sys.path handling — this is just for building paths.
 _BACKEND = Path(__file__).parent
 _PROJECT_ROOT = _BACKEND.parent
-sys.path.insert(0, str(_BACKEND))
 
 # ---------------------------------------------------------------------------
 # Flask app — frontend/ is a sibling of backend/ at the project root, and is the
 # static root, so index.html's "../../styles.css" / "../../_ds_bundle.js" /
 # "../../assets/…" resolve to the real files under frontend/.
 # ---------------------------------------------------------------------------
-app = Flask(__name__, static_folder=str(_PROJECT_ROOT / "frontend"), static_url_path="")
+app = Flask(
+    __name__, static_folder=str(_PROJECT_ROOT / "frontend"), static_url_path=""
+)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
 app.config["UPLOAD_FOLDER"] = _PROJECT_ROOT / "uploads" / "temp"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # System prompt driving the two-phase pipeline (read once at startup).
-PROMPT = (_BACKEND / "src" / "prompts" / "prompt_questions.md").read_text(encoding="utf-8")
+_PROMPT_PATH = _BACKEND / "src" / "prompts" / "prompt_questions.md"
+PROMPT = _PROMPT_PATH.read_text(encoding="utf-8")
 
 # ---------------------------------------------------------------------------
 # Offline stub — set SDC_STUB_REPLY to a saved LLM reply path to bypass the
@@ -105,6 +118,49 @@ def _csv_cols_rows(records: list):
     return cols, rows
 
 
+# Onyxia's reverse proxy kills a request after ~60s with no bytes sent. The LLM
+# call can legitimately take longer than that, so upload/answer run it in a
+# background thread while streaming whitespace keep-alives — insignificant
+# JSON whitespace, so the frontend's `res.json()` still parses the real
+# payload once it lands. Because the HTTP status is committed (200) before we
+# know the outcome, success/failure is signaled via the body's "error" key
+# instead of the status code.
+_HEARTBEAT_INTERVAL = 20  # seconds
+
+
+def _stream_json_result(work_fn):
+    """Run work_fn() in a background thread, streaming keep-alives meanwhile.
+    work_fn must return a plain dict — its own success/failure shape — never
+    raise (any internal try/except should convert failures to {"error": ...})."""
+    result = {}
+
+    def run():
+        try:
+            result["body"] = work_fn()
+        # Last-resort guard: work_fn already handles its own known errors.
+        except Exception as exc:  # noqa: BLE001
+            result["body"] = {"error": f"Erreur inattendue : {exc}"}
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+
+    def generate():
+        # Poll often so a fast reply isn't held up waiting for a full heartbeat
+        # interval to elapse — only the keep-alive byte itself is paced to
+        # _HEARTBEAT_INTERVAL, the completion check runs every `poll` seconds.
+        poll = 1.0
+        waited = 0.0
+        while thread.is_alive():
+            thread.join(timeout=poll)
+            waited += poll
+            if waited >= _HEARTBEAT_INTERVAL:
+                yield " "
+                waited = 0.0
+        yield json.dumps(result["body"])
+
+    return Response(stream_with_context(generate()), mimetype="application/json")
+
+
 # ---------------------------------------------------------------------------
 # Routes — UI
 # ---------------------------------------------------------------------------
@@ -146,61 +202,67 @@ def upload_metadata():
     filepath = app.config["UPLOAD_FOLDER"] / filename
     file.save(str(filepath))
 
-    try:
-        md = serialize(filepath)
-    except Exception as exc:
-        return jsonify({"error": f"Échec de la sérialisation : {exc}"}), 422
+    def do_work():
+        try:
+            md = serialize(filepath)
+        # Untrusted workbook: pandas/openpyxl/odfpy each raise their own error types.
+        except Exception as exc:  # noqa: BLE001
+            return {"error": f"Échec de la sérialisation : {exc}"}
 
-    history = [
-        {"role": "system", "content": PROMPT},
-        {"role": "user", "content": wrap(md)},
-    ]
-    try:
-        reply = _chat_with_retry(history)
-        print("=== RAW REPLY ===\n", reply, "\n =============")
-    except Exception as exc:
-        return jsonify({"error": _llm_error_message(exc)}), 502
-    history.append({"role": "assistant", "content": reply})
+        history = [
+            {"role": "system", "content": PROMPT},
+            {"role": "user", "content": wrap(md)},
+        ]
+        try:
+            reply = _chat_with_retry(history)
+            print("=== RAW REPLY ===\n", reply, "\n =============")
+        # External LLM call: openai client raises assorted network/auth error types.
+        except Exception as exc:  # noqa: BLE001
+            return {"error": _llm_error_message(exc)}
+        history.append({"role": "assistant", "content": reply})
 
-    # Phase 1 auto-continued: the model answered directly in JSON, no questions.
-    if is_auto_continued(reply):
-        records = extract_array(reply)
-        if records is None:
-            return jsonify({"error": "Réponse du modèle illisible (aucun tableau JSON)."}), 422
-        errors = validate(records)
-        if errors:
-            return jsonify({"error": "Validation du schéma échouée :\n" + "\n".join(errors)}), 422
+        # Phase 1 auto-continued: the model answered directly in JSON, no questions.
+        if is_auto_continued(reply):
+            records = extract_array(reply)
+            if records is None:
+                return {"error": "Réponse du modèle illisible (aucun tableau JSON)."}
+            errors = validate(records)
+            if errors:
+                msg = "Validation du schéma échouée :\n" + "\n".join(errors)
+                return {"error": msg}
+            sessions[session_id] = {
+                "file_name": filename,
+                "filepath": str(filepath),
+                "markdown": md,
+                "history": history,
+                "questions": [],
+                "records": records,
+            }
+            return {
+                "session_id": session_id,
+                "file_name": file.filename,
+                "extracted_markdown": md,
+                "questions": [],
+                "records": _records_to_ui(records),
+            }
+
+        parsed = _parse_questions(reply)
         sessions[session_id] = {
             "file_name": filename,
             "filepath": str(filepath),
             "markdown": md,
             "history": history,
-            "questions": [],
-            "records": records,
+            "questions": parsed,
+            "records": None,
         }
-        return jsonify({
+        return {
             "session_id": session_id,
             "file_name": file.filename,
             "extracted_markdown": md,
-            "questions": [],
-            "records": _records_to_ui(records),
-        })
+            "questions": parsed,
+        }
 
-    parsed = _parse_questions(reply)
-    sessions[session_id] = {
-        "file_name": filename,
-        "filepath": str(filepath),
-        "markdown": md,
-        "history": history,
-        "questions": parsed,
-        "records": None,
-    }
-    return jsonify({
-        "session_id": session_id,
-        "file_name": file.filename,
-        "extracted_markdown": md,
-        "questions": parsed,
-    })
+    return _stream_json_result(do_work)
 
 
 @app.route("/api/answer", methods=["POST"])
@@ -209,47 +271,56 @@ def submit_answers():
     session_id = data.get("session_id", "")
     sess = sessions.get(session_id)
     if not sess:
-        return jsonify({"error": "Session expirée côté serveur", "code": "session_expired"}), 410
+        body = {"error": "Session expirée côté serveur", "code": "session_expired"}
+        return jsonify(body), 410
 
     extra_info = str(data.get("extra_info", "")).strip()
 
     # Fast path: Phase 1 already produced the table (auto-continued) and the
     # producer didn't add anything new — nothing to send to the model.
     if sess["records"] is not None and not extra_info:
-        return jsonify({"status": "ok", "normalized_table": _records_to_ui(sess["records"])})
+        table = _records_to_ui(sess["records"])
+        return jsonify({"status": "ok", "normalized_table": table})
 
     answers = data.get("answers", {})
     answers_text = _format_answers(sess["questions"], answers, extra_info)
 
-    # Phase 2 (main.py lines 57–70): apply answers, then force JSON if the model re-asks.
-    # Work on a local copy of the history and only commit it to the session once
-    # the whole exchange succeeds. If sess["history"] were mutated up front, a
-    # timeout/failure would leave a dangling, unanswered "user" turn in it — and
-    # the next retry would append yet another one on top, corrupting the
-    # conversation sent to the model. Committing only on success means a retry
-    # always starts from the same clean state as the first attempt.
-    history = list(sess["history"])
-    history.append({"role": "user", "content": answers_text})
-    try:
-        reply = LLM_API_call.chat(history)
-        history.append({"role": "assistant", "content": reply})
-        if extract_array(reply) is None:
-            history.append({"role": "user", "content": FORCE_JSON_INSTRUCTION})
+    def do_work():
+        # Phase 2 (main.py 57-70): apply answers, force JSON if the model re-asks.
+        # Work on a local copy of the history and only commit it to the session
+        # once the whole exchange succeeds. If sess["history"] were mutated up
+        # front, a timeout/failure would leave a dangling, unanswered "user" turn
+        # in it — and the next retry would append yet another one on top,
+        # corrupting the conversation sent to the model. Committing only on
+        # success means a retry always starts from the same clean state as the
+        # first attempt.
+        history = list(sess["history"])
+        history.append({"role": "user", "content": answers_text})
+        try:
             reply = LLM_API_call.chat(history)
             history.append({"role": "assistant", "content": reply})
-    except Exception as exc:
-        return jsonify({"error": _llm_error_message(exc)}), 502
+            if extract_array(reply) is None:
+                history.append({"role": "user", "content": FORCE_JSON_INSTRUCTION})
+                reply = LLM_API_call.chat(history)
+                history.append({"role": "assistant", "content": reply})
+        # External LLM call: openai client raises assorted network/auth error types.
+        except Exception as exc:  # noqa: BLE001
+            return {"error": _llm_error_message(exc)}
 
-    records = extract_array(reply)
-    if records is None:
-        return jsonify({"error": "Le modèle n'a pas produit de tableau JSON exploitable."}), 422
-    errors = validate(records)
-    if errors:
-        return jsonify({"error": "Validation du schéma échouée :\n" + "\n".join(errors)}), 422
+        records = extract_array(reply)
+        if records is None:
+            return {"error": "Le modèle n'a pas produit de tableau JSON exploitable."}
+        errors = validate(records)
+        if errors:
+            msg = "Validation du schéma échouée :\n" + "\n".join(errors)
+            return {"error": msg}
 
-    sess["history"] = history
-    sess["records"] = records
-    return jsonify({"status": "ok", "normalized_table": _records_to_ui(records)})
+        sess["history"] = history
+        sess["records"] = records
+        table = _records_to_ui(records)
+        return {"status": "ok", "normalized_table": table}
+
+    return _stream_json_result(do_work)
 
 
 @app.route("/api/export", methods=["POST"])
@@ -261,7 +332,8 @@ def export_table():
     if not sess:
         return jsonify({"error": "Session introuvable"}), 404
     if sess["records"] is None:
-        return jsonify({"error": "Tableau non encore produit — relancez le pipeline"}), 409
+        msg = "Tableau non encore produit — relancez le pipeline"
+        return jsonify({"error": msg}), 409
 
     fmt = data.get("format", "csv")
     records = sess["records"]
@@ -326,7 +398,8 @@ def _chat_with_retry(history, attempts=2):
     for i in range(attempts):
         try:
             return LLM_API_call.chat(history)
-        except Exception as exc:
+        # Inspects type(exc).__name__ below to decide retry vs re-raise.
+        except Exception as exc:  # noqa: BLE001
             name = type(exc).__name__
             if "Connection" in name or "Timeout" in name:
                 last_exc = exc
@@ -336,7 +409,7 @@ def _chat_with_retry(history, attempts=2):
 
 
 def _parse_questions(text: str) -> list:
-    """Parse the LLM's Phase 1 JSON question array into structured dicts the UI expects."""
+    """Parse the LLM's Phase 1 JSON question array into dicts the UI expects."""
     raw = extract_array(text)
     if raw is None:
         return []
@@ -380,7 +453,7 @@ def _format_answers(questions: list, answers: dict, extra_info: str = "") -> str
 
 
 def _records_to_ui(records: list) -> list:
-    """Flatten nested spanning_variables into a display string for the Table component."""
+    """Flatten nested spanning_variables into a display string for the Table."""
     result = []
     for r in records:
         parts = []
@@ -400,4 +473,4 @@ def _records_to_ui(records: list) -> list:
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000, threaded=True)
