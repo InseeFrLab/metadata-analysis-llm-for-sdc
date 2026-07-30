@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import io
 import json
 import os
@@ -66,9 +67,14 @@ sessions: dict = {}
 #   "file_name": str,        secure filename
 #   "filepath":  str,        absolute temp path
 #   "markdown":  str,        serialized Markdown
-#   "history":   list,       message history — required for Phase 2
+#   "baseline":  list,       frozen Phase 1 history (system, workbook, questions).
+#                            Never mutated after upload — every Phase 2 run is
+#                            rebuilt from it, which is what makes re-answering
+#                            idempotent and free of self-anchoring.
 #   "questions": list,       parsed question dicts ([] if auto_continued)
-#   "records":   list|None,  validated records; None = Phase 2 not yet run
+#   "results":   dict,       answers fingerprint -> validated records (per-session
+#                            cache: an unchanged submission costs no model call)
+#   "records":   list|None,  records currently shown/exported; None = no table yet
 # }
 
 
@@ -222,8 +228,12 @@ def upload_metadata():
                 "file_name": filename,
                 "filepath": str(filepath),
                 "markdown": md,
-                "history": history,
+                "baseline": history,
                 "questions": [],
+                # There was nothing to ask, so this table already *is* the result
+                # for the empty submission — seeding the cache with it means
+                # continuing without adding anything costs no model call.
+                "results": {_answers_fingerprint(""): records},
                 "records": records,
             }
             return {
@@ -239,8 +249,9 @@ def upload_metadata():
             "file_name": filename,
             "filepath": str(filepath),
             "markdown": md,
-            "history": history,
+            "baseline": history,
             "questions": parsed,
+            "results": {},
             "records": None,
         }
         return {
@@ -262,35 +273,40 @@ def submit_answers():
         body = {"error": "Session expirée côté serveur", "code": "session_expired"}
         return jsonify(body), 410
 
-    extra_info = str(data.get("extra_info", "")).strip()
-
-    # Fast path: Phase 1 already produced the table (auto-continued) and the
-    # producer didn't add anything new — nothing to send to the model.
-    if sess["records"] is not None and not extra_info:
-        table = _records_to_ui(sess["records"])
-        return jsonify({"status": "ok", "normalized_table": table})
-
+    extra_info = str(data.get("extra_info") or "").strip()
     answers = data.get("answers", {})
+
+    # The text handed to the model *is* the identity of a submission: same text,
+    # same model input, same table. So its fingerprint — not "does a table
+    # already exist" — decides whether the producer actually changed anything.
+    # That's what lets someone come back from Vérification, edit an answer and
+    # get a genuinely new table, while an accidental round-trip through
+    # « Retour aux questions » still costs nothing.
     answers_text = _format_answers(sess["questions"], answers, extra_info)
+    key = _answers_fingerprint(answers_text)
+
+    cached = sess["results"].get(key)
+    if cached is not None:
+        # Re-point the session at it: /api/export must hand back the table the
+        # producer is looking at, including after reverting to earlier answers.
+        sess["records"] = cached
+        return jsonify({"status": "ok", "normalized_table": _records_to_ui(cached)})
 
     def do_work():
         # Phase 2 (main.py 57-70): apply answers, force JSON if the model re-asks.
-        # Work on a local copy of the history and only commit it to the session
-        # once the whole exchange succeeds. If sess["history"] were mutated up
-        # front, a timeout/failure would leave a dangling, unanswered "user" turn
-        # in it — and the next retry would append yet another one on top,
-        # corrupting the conversation sent to the model. Committing only on
-        # success means a retry always starts from the same clean state as the
-        # first attempt.
-        history = list(sess["history"])
-        history.append({"role": "user", "content": answers_text})
+        # Always rebuilt from the frozen Phase 1 baseline, never from a previous
+        # Phase 2 exchange. Two reasons: the model must not see its own earlier
+        # table (at temperature 0 it anchors on it and re-emits it verbatim,
+        # which reads as "my new answers were ignored"), and a run that fails
+        # can't leave a dangling, unanswered turn for the next attempt to build
+        # on. Every run therefore starts from the same clean state.
+        history = sess["baseline"] + [{"role": "user", "content": answers_text}]
         try:
             reply = LLM_API_call.chat(history)
             history.append({"role": "assistant", "content": reply})
             if extract_array(reply) is None:
                 history.append({"role": "user", "content": FORCE_JSON_INSTRUCTION})
                 reply = LLM_API_call.chat(history)
-                history.append({"role": "assistant", "content": reply})
         # External LLM call: openai client raises assorted network/auth error types.
         except Exception as exc:  # noqa: BLE001
             return {"error": _llm_error_message(exc)}
@@ -303,7 +319,8 @@ def submit_answers():
             msg = "Validation du schéma échouée :\n" + "\n".join(errors)
             return {"error": msg}
 
-        sess["history"] = history
+        # Cached on success only, so a failed run is retried for real.
+        sess["results"][key] = records
         sess["records"] = records
         table = _records_to_ui(records)
         return {"status": "ok", "normalized_table": table}
@@ -423,12 +440,22 @@ def _parse_questions(text: str) -> list:
     return questions
 
 
+def _answers_fingerprint(answers_text: str) -> str:
+    """Stable identity of one Phase 2 submission. Hashed rather than stored raw
+    so the per-session cache stays small whatever the producer pastes into
+    « informations complémentaires »."""
+    return hashlib.sha256(answers_text.encode("utf-8")).hexdigest()
+
+
 def _format_answers(questions: list, answers: dict, extra_info: str = "") -> str:
     """Reconstruct the numbered answer text Phase 2 expects, plus any free-text
     context the producer added beyond the model's specific questions."""
     lines = []
     for q in questions:
-        ans = answers.get(str(q["id"]), "").strip()
+        # `or ""` — clearing a textarea sends null for that question, and a bare
+        # .strip() on it would 500 as an HTML page (which the frontend surfaces
+        # as a misleading "impossible de joindre le serveur").
+        ans = str(answers.get(str(q["id"])) or "").strip()
         if ans:
             lines.append(f"{q['id']}. {ans}")
     extra = (extra_info or "").strip()

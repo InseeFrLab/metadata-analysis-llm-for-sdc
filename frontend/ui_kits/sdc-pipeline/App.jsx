@@ -13,6 +13,21 @@ function Processing({ label }) {
   );
 }
 
+/* Canonical identity of one submission, mirroring the backend's fingerprint:
+   blank answers dropped, surrounding whitespace ignored, question order fixed.
+   Only ever an optimisation — the server re-derives its own key and is the
+   authority. Being *stricter* than the server is therefore safe (worst case a
+   pointless round-trip that the server answers from its cache); being looser
+   would not be, which is why nothing beyond trimming is normalised here. */
+function submissionKey(answers, extraInfo) {
+  const norm = {};
+  Object.keys(answers).sort().forEach((k) => {
+    const v = (answers[k] || "").trim();
+    if (v) norm[k] = v;
+  });
+  return JSON.stringify({ a: norm, e: (extraInfo || "").trim() });
+}
+
 function App() {
   const [step, setStep] = useAppState(0);
   const [file, setFile] = useAppState(null);
@@ -24,6 +39,9 @@ function App() {
   const [markdown, setMarkdown] = useAppState("");
   const [records, setRecords] = useAppState([]);
   const [error, setError] = useAppState(null);
+  // Key of the submission the table on screen was produced from, so returning
+  // from Vérification without touching anything skips the call entirely.
+  const [submittedKey, setSubmittedKey] = useAppState(null);
 
   const reset = () => {
     setFile(null);
@@ -35,6 +53,7 @@ function App() {
     setMarkdown("");
     setRecords([]);
     setError(null);
+    setSubmittedKey(null);
   };
 
   async function handleUpload() {
@@ -43,6 +62,7 @@ function App() {
     setExtraInfo("");
     setQuestions([]);
     setRecords([]);
+    setSubmittedKey(null);
     setProcessing("Lecture du classeur et analyse des ambiguïtés…");
     const fd = new FormData();
     fd.append("file", file.raw);
@@ -58,7 +78,11 @@ function App() {
       setMarkdown(data.extracted_markdown || "");
       setQuestions(data.questions || []);
       if (data.records && data.records.length > 0) {
+        // Auto-continued: the table came back with no questions asked, so it
+        // already corresponds to the empty submission (the server seeded the
+        // same key). Continuing without adding anything is then a no-op.
         setRecords(data.records);
+        setSubmittedKey(submissionKey({}, ""));
       }
       setStep(1);
     } catch (_e) {
@@ -69,6 +93,15 @@ function App() {
 
   async function handleAnswer() {
     setError(null);
+
+    // Nothing edited since the table on screen was produced — go straight back
+    // to it rather than regenerating an identical one.
+    const key = submissionKey(answers, extraInfo);
+    if (key === submittedKey && records.length > 0) {
+      setStep(2);
+      return;
+    }
+
     setProcessing("Prise en compte des réponses et production du CSV...");
     try {
       const res = await fetch("/api/answer", {
@@ -89,6 +122,8 @@ function App() {
         return;
       }
       setRecords(data.normalized_table || []);
+      // Recorded on success only, so a run that failed is genuinely retried.
+      setSubmittedKey(key);
       setStep(2);
     } catch (_e) {
       setError("Impossible de joindre le serveur.");

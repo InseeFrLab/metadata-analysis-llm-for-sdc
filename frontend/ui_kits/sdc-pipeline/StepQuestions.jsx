@@ -74,7 +74,10 @@ function ExtraInfoBox({ value, onChange }) {
 
 function StepQuestions({ questions, answers, onAnswer, extraInfo, onExtraInfoChange, onBack, onNext }) {
   const autoContinued = questions.length === 0;
-  const answered = Object.keys(answers).length;
+  // Count answers that actually hold text, not keys: clearing a textarea leaves
+  // the key behind with a null value, which would otherwise keep the button
+  // enabled and submit a blank answer as if it had been filled in.
+  const answered = questions.filter((q) => (answers[q.id] || "").trim()).length;
   const allDone = autoContinued || answered === questions.length;
 
   if (autoContinued) {
