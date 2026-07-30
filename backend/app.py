@@ -1,20 +1,18 @@
 import csv
 import hashlib
 import io
-import json
 import os
 import re
 import threading
+import time
 from pathlib import Path
 
 from flask import (
     Flask,
-    Response,
     jsonify,
     redirect,
     request,
     send_file,
-    stream_with_context,
 )
 from src import LLM_API_call
 from src.clean import _dataframe_to_rows, clean_sheet
@@ -112,47 +110,62 @@ def _csv_cols_rows(records: list):
     return cols, rows
 
 
-# Onyxia's reverse proxy kills a request after ~60s with no bytes sent. The LLM
-# call can legitimately take longer than that, so upload/answer run it in a
-# background thread while streaming whitespace keep-alives — insignificant
-# JSON whitespace, so the frontend's `res.json()` still parses the real
-# payload once it lands. Because the HTTP status is committed (200) before we
-# know the outcome, success/failure is signaled via the body's "error" key
-# instead of the status code.
-_HEARTBEAT_INTERVAL = 20  # seconds
+# ---------------------------------------------------------------------------
+# Background jobs
+#
+# An LLM call can run for well over ten minutes, with no predictable ceiling.
+# Holding an HTTP request open for that long is fragile whatever the proxy
+# timeout is: Onyxia's reverse proxy cuts at ~60s, and even with that raised,
+# a sleeping laptop / wifi blip / VPN reconnect would throw away a call with
+# minutes of work invested in it.
+#
+# So the long endpoints don't answer synchronously. They start the work in a
+# background thread, hand back a job id immediately, and the frontend polls
+# /api/jobs/<id>. Nothing depends on a long-lived connection, so a dropped
+# connection costs a poll, not a re-run.
+# ---------------------------------------------------------------------------
+jobs: dict = {}
+# jobs[job_id] = {
+#   "state":   "pending" | "done" | "error",
+#   "body":    dict|None,  work_fn's return value once it has finished
+#   "updated": float,      epoch seconds, for pruning finished jobs
+# }
+
+_JOB_TTL = 3600  # seconds a finished job stays readable
 
 
-def _stream_json_result(work_fn):
-    """Run work_fn() in a background thread, streaming keep-alives meanwhile.
+def _prune_jobs():
+    """Drop finished jobs past their TTL. Running jobs are never pruned —
+    they have no upper bound on duration, which is the whole point."""
+    cutoff = time.time() - _JOB_TTL
+    stale = [jid for jid, j in list(jobs.items())
+             if j["state"] != "pending" and j["updated"] < cutoff]
+    for jid in stale:
+        jobs.pop(jid, None)
+
+
+def _start_job(work_fn):
+    """Run work_fn() in a background thread; reply 202 with its job id.
     work_fn must return a plain dict — its own success/failure shape — never
     raise (any internal try/except should convert failures to {"error": ...})."""
-    result = {}
+    _prune_jobs()
+    job_id = os.urandom(16).hex()
+    jobs[job_id] = {"state": "pending", "body": None, "updated": time.time()}
 
     def run():
         try:
-            result["body"] = work_fn()
+            body = work_fn()
         # Last-resort guard: work_fn already handles its own known errors.
         except Exception as exc:  # noqa: BLE001
-            result["body"] = {"error": f"Erreur inattendue : {exc}"}
+            body = {"error": f"Erreur inattendue : {exc}"}
+        # Publish the body before flipping the state — a poller that sees
+        # "done" must never find a body that isn't there yet.
+        jobs[job_id]["body"] = body
+        jobs[job_id]["updated"] = time.time()
+        jobs[job_id]["state"] = "error" if body.get("error") else "done"
 
-    thread = threading.Thread(target=run, daemon=True)
-    thread.start()
-
-    def generate():
-        # Poll often so a fast reply isn't held up waiting for a full heartbeat
-        # interval to elapse — only the keep-alive byte itself is paced to
-        # _HEARTBEAT_INTERVAL, the completion check runs every `poll` seconds.
-        poll = 1.0
-        waited = 0.0
-        while thread.is_alive():
-            thread.join(timeout=poll)
-            waited += poll
-            if waited >= _HEARTBEAT_INTERVAL:
-                yield " "
-                waited = 0.0
-        yield json.dumps(result["body"])
-
-    return Response(stream_with_context(generate()), mimetype="application/json")
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({"job_id": job_id}), 202
 
 
 # ---------------------------------------------------------------------------
@@ -181,6 +194,27 @@ def handle_too_large(_e):
 # ---------------------------------------------------------------------------
 # API endpoints
 # ---------------------------------------------------------------------------
+
+@app.route("/api/jobs/<job_id>", methods=["GET"])
+def job_status(job_id):
+    """Poll a background job. Cheap and stateless-ish on purpose: the frontend
+    may call this hundreds of times over a long run, and may resume calling it
+    after a network interruption."""
+    job = jobs.get(job_id)
+    if not job:
+        body = {"error": "Tâche introuvable ou expirée", "code": "job_not_found"}
+        return jsonify(body), 404
+    if job["state"] == "pending":
+        return jsonify({"status": "pending"})
+    if job["state"] == "error":
+        body = job["body"]
+        return jsonify({
+            "status": "error",
+            "error": body.get("error", "Erreur inconnue"),
+            "code": body.get("code"),
+        })
+    return jsonify({"status": "done", "result": job["body"]})
+
 
 @app.route("/api/upload", methods=["POST"])
 def upload_metadata():
@@ -261,7 +295,7 @@ def upload_metadata():
             "questions": parsed,
         }
 
-    return _stream_json_result(do_work)
+    return _start_job(do_work)
 
 
 @app.route("/api/answer", methods=["POST"])
@@ -304,17 +338,23 @@ def submit_answers():
         try:
             reply = LLM_API_call.chat(history)
             history.append({"role": "assistant", "content": reply})
-            if extract_array(reply) is None:
+            records, errors = _extract_and_validate(reply)
+            # Retry once, forcing JSON, whenever the reply isn't a usable
+            # records table — either unparseable, or (the common case) the
+            # model re-asked its Phase 1 questions instead of answering, which
+            # is syntactically valid JSON (so extract_array alone can't catch
+            # it) but fails the records schema with e.g. "'table_name' is a
+            # required property ... Additional properties ... 'category'".
+            if records is None or errors:
                 history.append({"role": "user", "content": FORCE_JSON_INSTRUCTION})
                 reply = LLM_API_call.chat(history)
+                records, errors = _extract_and_validate(reply)
         # External LLM call: openai client raises assorted network/auth error types.
         except Exception as exc:  # noqa: BLE001
             return {"error": _llm_error_message(exc)}
 
-        records = extract_array(reply)
         if records is None:
             return {"error": "Le modèle n'a pas produit de tableau JSON exploitable."}
-        errors = validate(records)
         if errors:
             msg = "Validation du schéma échouée :\n" + "\n".join(errors)
             return {"error": msg}
@@ -325,7 +365,7 @@ def submit_answers():
         table = _records_to_ui(records)
         return {"status": "ok", "normalized_table": table}
 
-    return _stream_json_result(do_work)
+    return _start_job(do_work)
 
 
 @app.route("/api/export", methods=["POST"])
@@ -411,6 +451,17 @@ def _chat_with_retry(history, attempts=2):
                 continue
             raise
     raise last_exc
+
+
+def _extract_and_validate(reply: str):
+    """(records, errors) for a Phase 2 reply — records is None if reply isn't
+    even parseable JSON; errors is the schema-validation error list (empty on
+    success). Centralised so both the first attempt and the forced retry use
+    the exact same "is this a usable table" check."""
+    records = extract_array(reply)
+    if records is None:
+        return None, []
+    return records, validate(records)
 
 
 def _parse_questions(text: str) -> list:

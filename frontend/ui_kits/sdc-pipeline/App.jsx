@@ -28,6 +28,74 @@ function submissionKey(answers, extraInfo) {
   return JSON.stringify({ a: norm, e: (extraInfo || "").trim() });
 }
 
+/* ---------------------------------------------------------------------------
+   Long operations run as background jobs on the server: the POST returns a
+   job id straight away and we poll for the outcome. No request is ever held
+   open, so nothing here depends on the reverse proxy's timeout, and a network
+   interruption costs a retried poll rather than a re-run of a call that may
+   already have ten minutes invested in it.
+   --------------------------------------------------------------------------- */
+const POLL_MS = 3000;
+// ~2 min of uninterrupted failures before giving up. Generous on purpose: the
+// work keeps running server-side regardless, so patience is nearly free while
+// bailing early throws away a very expensive call.
+const POLL_MAX_FAILURES = 40;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function pollJob(jobId) {
+  let failures = 0;
+  for (;;) {
+    await sleep(POLL_MS);
+    let res;
+    try {
+      res = await fetch(`/api/jobs/${jobId}`);
+    } catch (_e) {
+      // Connection dropped. The job is unaffected — keep polling.
+      if (++failures > POLL_MAX_FAILURES) {
+        return { error: "Connexion perdue avec le serveur. Le traitement se poursuit peut-être côté serveur — réessayez dans un instant." };
+      }
+      continue;
+    }
+    if (res.status === 404) {
+      return { error: "Le traitement a été perdu côté serveur (redémarrage ?). Veuillez relancer l'étape." };
+    }
+    if (!res.ok) {
+      if (++failures > POLL_MAX_FAILURES) {
+        return { error: "Le serveur ne répond plus correctement." };
+      }
+      continue;
+    }
+    let data;
+    try {
+      data = await res.json();
+    } catch (_e) {
+      if (++failures > POLL_MAX_FAILURES) {
+        return { error: "Réponse illisible du serveur." };
+      }
+      continue;
+    }
+    failures = 0;
+    if (data.status === "done") return data.result;
+    if (data.status === "error") return { error: data.error, code: data.code };
+  }
+}
+
+/* POST, then wait for the job it started. A response without a job_id is an
+   immediate answer (a cache hit, or an error caught before any work began) and
+   is passed straight through. */
+async function runJob(url, options) {
+  const res = await fetch(url, options);
+  let data;
+  try {
+    data = await res.json();
+  } catch (_e) {
+    return { error: "Réponse illisible du serveur." };
+  }
+  if (data.job_id) return await pollJob(data.job_id);
+  return data;
+}
+
 function App() {
   const [step, setStep] = useAppState(0);
   const [file, setFile] = useAppState(null);
@@ -67,8 +135,7 @@ function App() {
     const fd = new FormData();
     fd.append("file", file.raw);
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json();
+      const data = await runJob("/api/upload", { method: "POST", body: fd });
       if (data.error) {
         setError(data.error);
         setProcessing(null);
@@ -104,12 +171,11 @@ function App() {
 
     setProcessing("Prise en compte des réponses et production du CSV...");
     try {
-      const res = await fetch("/api/answer", {
+      const data = await runJob("/api/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: sessionId, answers, extra_info: extraInfo }),
       });
-      const data = await res.json();
       if (data.error) {
         if (data.code === "session_expired") {
           reset();
