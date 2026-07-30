@@ -26,7 +26,7 @@ function Footer() {
       <div className="sdc-footer__top">
         <img src="../../assets/logo-insee.png" alt="Insee" className="sdc-insee-logo-img sdc-insee-logo-img--footer" />
         <p className="sdc-footer__desc">
-          Outil interne de l'Insee pour formatter les métadonnées de tableaux statistiques
+          Outil interne de l'Insee pour formater les métadonnées de tableaux statistiques
           avant la pose du secret via <b>rtauargus</b>.
         </p>
       </div>

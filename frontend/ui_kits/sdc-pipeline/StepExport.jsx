@@ -44,23 +44,22 @@ function StepExport({ records, fileName, sessionId, onRestart }) {
         <div>
           <h1 className="sdc-h1">Tableau prêt à l'export</h1>
           <p className="sdc-lead">
-            Le tableau normalisé est prêt au téléchargement en csv.
+            Le tableau formaté est prêt au téléchargement en csv.
             Téléchargez-le pour relecture ou pour la pose du secret.
           </p>
         </div>
       </div>
 
-      <EDS.Alert type="success" title="Pipeline terminé">
-        {records.length} tableau{records.length > 1 ? "x" : ""} normalisé{records.length > 1 ? "s" : ""} et validé{records.length > 1 ? "s" : ""} à partir de <b>{fileName}</b>.
+      <EDS.Alert type="success" title="Formatage terminé">
+        {records.length} tableau{records.length > 1 ? "x" : ""} formaté{records.length > 1 ? "s" : ""} et validé{records.length > 1 ? "s" : ""} à partir de <b>{fileName}</b>.
       </EDS.Alert>
-
       <div className="sdc-stats">
         <Stat value={records.length} label={`tableau${records.length > 1 ? "x" : ""}`} />
       </div>
 
       <div className="sdc-export">
         <EDS.Card
-          title={`${stem}_normalise.csv`}
+          title={`${stem}_formate.csv`}
           pictogramSrc="../../assets/pictograms/document-download.svg"
           footer={
             <EDS.Button size="sm" icon="ri-download-line" onClick={() => download("csv")}>

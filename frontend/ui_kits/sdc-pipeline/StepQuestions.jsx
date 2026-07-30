@@ -85,7 +85,7 @@ function StepQuestions({ questions, answers, onAnswer, extraInfo, onExtraInfoCha
           <div>
             <h1 className="sdc-h1">Aucune question nécessaire</h1>
             <p className="sdc-lead">
-              Le modèle a analysé le classeur et produit directement le tableau formatté,
+              Le modèle a analysé le classeur et produit directement les métadonnées formatées,
               sans ambiguïté à lever. Vous pouvez passer à la vérification.
             </p>
           </div>
@@ -93,7 +93,7 @@ function StepQuestions({ questions, answers, onAnswer, extraInfo, onExtraInfoCha
 
         <QDS.Alert type="info" title="Tableau produit automatiquement">
           Le modèle n'a pas identifié de point d'ambiguïté dans vos métadonnées.
-          Le tableau formatté a été généré en phase&nbsp;1 — aucune réponse n'est requise.
+          Le tableau formaté a été généré en phase&nbsp;1 — aucune réponse n'est requise.
         </QDS.Alert>
 
         <ExtraInfoBox value={extraInfo} onChange={onExtraInfoChange} />
@@ -115,8 +115,7 @@ function StepQuestions({ questions, answers, onAnswer, extraInfo, onExtraInfoCha
         <div>
           <h1 className="sdc-h1">Le modèle a {questions.length} question{questions.length > 1 ? "s" : ""}</h1>
           <p className="sdc-lead">
-            Ces points d'ambiguïté changeraient la valeur d'au moins un champ du tableau final.
-            Répondez pour lever l'incertitude — chaque réponse est appliquée en phase&nbsp;2.
+            Ces points d'ambiguïté changeraient la valeur d'au moins un champ des métadonnées finales.
           </p>
         </div>
       </div>
@@ -134,7 +133,7 @@ function StepQuestions({ questions, answers, onAnswer, extraInfo, onExtraInfoCha
       <div className="sdc-actions sdc-actions--split">
         <QDS.Button variant="secondary" icon="ri-arrow-left-line" onClick={onBack}>Retour</QDS.Button>
         <QDS.Button icon="ri-arrow-right-line" iconRight disabled={!allDone} onClick={onNext}>
-          Formatter les métadonnées
+          Formater les métadonnées
         </QDS.Button>
       </div>
     </div>
