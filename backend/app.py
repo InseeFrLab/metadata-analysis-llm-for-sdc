@@ -14,6 +14,9 @@ from flask import (
     request,
     send_file,
 )
+from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.utils import secure_filename
+
 from src import LLM_API_call
 from src.clean import _dataframe_to_rows, clean_sheet
 from src.data import read_file
@@ -22,8 +25,6 @@ from src.LLM_API_call import FORCE_JSON_INSTRUCTION, is_auto_continued
 from src.transform_input import to_markdown, wrap
 from src.transform_output import HEADER_BASE, _spanning_pairs, max_spanning
 from src.validate_json_output import validate
-from werkzeug.exceptions import RequestEntityTooLarge
-from werkzeug.utils import secure_filename
 
 # `python backend/app.py` puts backend/ at sys.path[0] automatically, so `src`
 # resolves with no manual sys.path handling — this is just for building paths.

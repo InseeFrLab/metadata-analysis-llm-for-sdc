@@ -1,7 +1,6 @@
-from typing import List, Tuple, Optional
 
 
-def _table_md(rows: List[List[str]]) -> str:
+def _table_md(rows: list[list[str]]) -> str:
     """Transormation par feuille en tableaux md"""
     width = max((len(r) for r in rows), default=0)
     if width == 0:
@@ -16,7 +15,7 @@ def _table_md(rows: List[List[str]]) -> str:
     return "\n".join(lines)
 
 
-def to_markdown(sheets: List[Tuple[str, List[List[str]]]], title: Optional[str] = None) -> str:
+def to_markdown(sheets: list[tuple[str, list[list[str]]]], title: str | None = None) -> str:
     """Combiner [(sheet_name, rows), ...] en un seul bloc"""
     parts = []
     if title:

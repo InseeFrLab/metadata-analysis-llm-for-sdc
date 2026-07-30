@@ -1,5 +1,5 @@
+
 import pandas as pd
-from typing import List
 
 
 def _clean(text: object) -> str:
@@ -12,7 +12,7 @@ def _clean(text: object) -> str:
     return " ".join(s.split())
 
 
-def _strip_trailing_empty(seq: List[str]) -> List[str]:
+def _strip_trailing_empty(seq: list[str]) -> list[str]:
     """Retire les '' en fin de liste."""
     out = list(seq)
     while out and out[-1] == "":
@@ -20,7 +20,7 @@ def _strip_trailing_empty(seq: List[str]) -> List[str]:
     return out
 
 
-def _dataframe_to_rows(df: pd.DataFrame) -> List[List[str]]:
+def _dataframe_to_rows(df: pd.DataFrame) -> list[list[str]]:
     """DataFrame -> lignes str, en-tête inclus en ligne 0."""
     df = df.fillna("")
     header = ["" if str(c).startswith("Unnamed:") else str(c) for c in df.columns]
@@ -28,7 +28,7 @@ def _dataframe_to_rows(df: pd.DataFrame) -> List[List[str]]:
     return [header] + body
 
 
-def clean_sheet(rows: List[List[str]]) -> List[List[str]]:
+def clean_sheet(rows: list[list[str]]) -> list[list[str]]:
     """Nettoie les cellules et retire les cellules/lignes vides en fin de feuille."""
     rows = [_strip_trailing_empty([_clean(cell) for cell in r]) for r in rows]
     while rows and not rows[-1]:

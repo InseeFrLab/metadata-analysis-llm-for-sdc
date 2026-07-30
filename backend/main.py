@@ -2,13 +2,13 @@ import argparse
 import csv
 from pathlib import Path
 
-from src.data import read_file
 from src.clean import _dataframe_to_rows, clean_sheet
-from src.transform_input import wrap, to_markdown
-from src.LLM_API_call import chat, is_auto_continued, FORCE_JSON_INSTRUCTION
+from src.data import read_file
 from src.extract_JSON_array import extract_array
+from src.LLM_API_call import FORCE_JSON_INSTRUCTION, chat, is_auto_continued
+from src.transform_input import to_markdown, wrap
+from src.transform_output import HEADER_BASE, _spanning_pairs, max_spanning
 from src.validate_json_output import validate
-from src.transform_output import _spanning_pairs, max_spanning, HEADER_BASE
 
 # Resolved relative to this file, not the cwd, so the CLI works from anywhere.
 DEFAULT_PROMPT = Path(__file__).parent / "src" / "prompts" / "prompt_questions.md"
@@ -50,7 +50,8 @@ if __name__ == "__main__":
     markdown = to_markdown(cleaned_sheets, title=title)
 
     # ---- IV. LLM call(s) ------------------------------------------------
-    prompt = open(args.prompt, encoding="utf-8").read()
+    with open(args.prompt, encoding="utf-8") as f:
+        prompt = f.read()
     history = [
         {"role": "system", "content": prompt},
         {"role": "user", "content": wrap(markdown)},

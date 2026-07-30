@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import json
-from jsonschema import Draft202012Validator
 from pathlib import Path
-from typing import Dict, List, Optional
+
+from jsonschema import Draft202012Validator
 
 SCHEMA_PATH = Path(__file__).parent / "schema" / "sdc_output.schema.json"
 
 
-def load_schema() -> Dict:
+def load_schema() -> dict:
     return json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
-def validate(records: List, schema: Optional[Dict] = None) -> List[str]:
+def validate(records: list, schema: dict | None = None) -> list[str]:
     """Retourne une liste d'erreurs comapré au schema"""
 
     validator = Draft202012Validator(schema or load_schema())

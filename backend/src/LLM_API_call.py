@@ -1,6 +1,7 @@
 
-from openai import OpenAI
 import os
+
+from openai import OpenAI
 
 DEFAULT_BASE_URL = "https://llm.lab.sspcloud.fr/api/v1"  # INSEE SSP Cloud
 DEFAULT_MODEL = "qwen3-6-35b-moe"
