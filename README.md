@@ -15,7 +15,7 @@ pipeline produit un tableau plat normalisé.
 
 1. Ouvrir Onyxia sur le SSPCloud et se connecter.
 2. Lancer un service **VSCode-python** avec :
-   - le nom de la clé API personnelle (comme appelée dans « Secrets » sur Onyxia — pas la clé elle-même) dans la rubrique **« Secret »** de Vault. Plus d'informations ci-dessous pour créer votre clé API personnelle
+   - le nom de la clé API personnelle (comme appelée dans « Secrets » sur Onyxia — pas la clé elle-même) dans la rubrique **« Secret »** de Vault. Plus d'informations ci-dessous pour créer votre clé API personnelle.
    - le repo `https://github.com/InseeFrLab/metadata-analysis-llm-for-sdc.git` dans la rubrique **« Repository »** de Git. Plus d'informations ci-dessous pour créer votre Token sur Git.
    - cliquer sur **« Network access »** → **« Enable access to your service through specific ports »**. Par défaut Onyxia choisit Port 1 = 5000 (mettre la valeur 5000 si ce n'est pas déjà le cas).
 3. Lancer le service.
@@ -24,6 +24,7 @@ pipeline produit un tableau plat normalisé.
 ```{bash}
 cd metadata-analysis-llm-for-sdc
 uv sync
+```
 
 # Lancer l'app
 

@@ -36,14 +36,10 @@ function QuestionCard({ q, value, onAnswer }) {
         ))}
       </div>
       <div className="sdc-question__custom">
-        <label className="sdc-question__custom-label" htmlFor={`custom-${q.id}`}>
-          <i className="ri-edit-line" aria-hidden="true"></i>
-          Autre réponse
-        </label>
         <textarea
           id={`custom-${q.id}`}
           className={`sdc-question__custom-input${isCustomActive ? ' sdc-question__custom-input--active' : ''}`}
-          placeholder="Saisissez votre réponse si aucune option ci-dessus ne convient…"
+          placeholder="Saisissez votre réponse..."
           value={custom}
           onChange={handleCustomChange}
           rows={2}
@@ -89,7 +85,7 @@ function StepQuestions({ questions, answers, onAnswer, extraInfo, onExtraInfoCha
           <div>
             <h1 className="sdc-h1">Aucune question nécessaire</h1>
             <p className="sdc-lead">
-              Le modèle a analysé le classeur et produit directement le tableau normalisé,
+              Le modèle a analysé le classeur et produit directement le tableau formatté,
               sans ambiguïté à lever. Vous pouvez passer à la vérification.
             </p>
           </div>
@@ -97,7 +93,7 @@ function StepQuestions({ questions, answers, onAnswer, extraInfo, onExtraInfoCha
 
         <QDS.Alert type="info" title="Tableau produit automatiquement">
           Le modèle n'a pas identifié de point d'ambiguïté dans vos métadonnées.
-          Le tableau normalisé a été généré en phase&nbsp;1 — aucune réponse n'est requise.
+          Le tableau formatté a été généré en phase&nbsp;1 — aucune réponse n'est requise.
         </QDS.Alert>
 
         <ExtraInfoBox value={extraInfo} onChange={onExtraInfoChange} />
@@ -138,7 +134,7 @@ function StepQuestions({ questions, answers, onAnswer, extraInfo, onExtraInfoCha
       <div className="sdc-actions sdc-actions--split">
         <QDS.Button variant="secondary" icon="ri-arrow-left-line" onClick={onBack}>Retour</QDS.Button>
         <QDS.Button icon="ri-arrow-right-line" iconRight disabled={!allDone} onClick={onNext}>
-          Produire le tableau
+          Formatter les métadonnées
         </QDS.Button>
       </div>
     </div>
