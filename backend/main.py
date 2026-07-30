@@ -2,12 +2,12 @@ import argparse
 import csv
 from pathlib import Path
 
-from src.clean import _dataframe_to_rows, clean_sheet
+from src.clean import clean_sheet, dataframe_to_rows
 from src.data import read_file
 from src.extract_JSON_array import extract_array
 from src.LLM_API_call import FORCE_JSON_INSTRUCTION, chat, is_auto_continued
 from src.transform_input import to_markdown, wrap
-from src.transform_output import HEADER_BASE, _spanning_pairs, max_spanning
+from src.transform_output import HEADER_BASE, max_spanning, spanning_pairs
 from src.validate_json_output import validate
 
 # Resolved relative to this file, not the cwd, so the CLI works from anywhere.
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # ---- II. Clean ---------------------------------------------------
     cleaned_sheets = []
     for name, df in data.items():
-        rows = _dataframe_to_rows(df)
+        rows = dataframe_to_rows(df)
         rows = clean_sheet(rows)
         if any(any(c for c in r) for r in rows):
             cleaned_sheets.append((name, rows))
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     for rec in records:
         row = [rec["table_name"], rec["field"], rec["hrc_field"],
                rec["indicator"], rec["hrc_indicator"]]
-        pairs = _spanning_pairs(rec)
+        pairs = spanning_pairs(rec)
         for i in range(n_span):
             code, hrc = pairs[i] if i < len(pairs) else ("", "")
             row += [code, hrc]

@@ -2,7 +2,7 @@
 import pandas as pd
 
 
-def _clean(text: object) -> str:
+def clean(text: object) -> str:
     """Nettoyage par cellule pour avoir un str propre (pas d'espace,...)"""
     if text is None:
         return ""
@@ -12,7 +12,7 @@ def _clean(text: object) -> str:
     return " ".join(s.split())
 
 
-def _strip_trailing_empty(seq: list[str]) -> list[str]:
+def strip_trailing_empty(seq: list[str]) -> list[str]:
     """Retire les '' en fin de liste."""
     out = list(seq)
     while out and out[-1] == "":
@@ -20,7 +20,7 @@ def _strip_trailing_empty(seq: list[str]) -> list[str]:
     return out
 
 
-def _dataframe_to_rows(df: pd.DataFrame) -> list[list[str]]:
+def dataframe_to_rows(df: pd.DataFrame) -> list[list[str]]:
     """DataFrame -> lignes str, en-tête inclus en ligne 0."""
     df = df.fillna("")
     header = ["" if str(c).startswith("Unnamed:") else str(c) for c in df.columns]
@@ -30,7 +30,7 @@ def _dataframe_to_rows(df: pd.DataFrame) -> list[list[str]]:
 
 def clean_sheet(rows: list[list[str]]) -> list[list[str]]:
     """Nettoie les cellules et retire les cellules/lignes vides en fin de feuille."""
-    rows = [_strip_trailing_empty([_clean(cell) for cell in r]) for r in rows]
+    rows = [strip_trailing_empty([clean(cell) for cell in r]) for r in rows]
     while rows and not rows[-1]:
         rows.pop()
     return rows

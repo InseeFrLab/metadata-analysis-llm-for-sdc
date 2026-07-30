@@ -1,6 +1,6 @@
 
 
-def _table_md(rows: list[list[str]]) -> str:
+def table_md(rows: list[list[str]]) -> str:
     """Transormation par feuille en tableaux md"""
     width = max((len(r) for r in rows), default=0)
     if width == 0:
@@ -21,7 +21,7 @@ def to_markdown(sheets: list[tuple[str, list[list[str]]]], title: str | None = N
     if title:
         parts.append(f"# {title}\n")
     for name, rows in sheets:
-        table = _table_md(rows)
+        table = table_md(rows)
         if table:
             parts.append(f"## {name}\n\n{table}")
     return "\n\n".join(parts) + "\n"

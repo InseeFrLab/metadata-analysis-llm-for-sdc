@@ -18,12 +18,12 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.utils import secure_filename
 
 from src import LLM_API_call
-from src.clean import _dataframe_to_rows, clean_sheet
+from src.clean import clean_sheet, dataframe_to_rows
 from src.data import read_file
 from src.extract_JSON_array import extract_array
 from src.LLM_API_call import FORCE_JSON_INSTRUCTION, is_auto_continued
 from src.transform_input import to_markdown, wrap
-from src.transform_output import HEADER_BASE, _spanning_pairs, max_spanning
+from src.transform_output import HEADER_BASE, max_spanning, spanning_pairs
 from src.validate_json_output import validate
 
 # `python backend/app.py` puts backend/ at sys.path[0] automatically, so `src`
@@ -86,13 +86,13 @@ def serialize(filepath) -> str:
     data = read_file(str(filepath))
     cleaned_sheets = []
     for name, df in data.items():
-        rows = clean_sheet(_dataframe_to_rows(df))
+        rows = clean_sheet(dataframe_to_rows(df))
         if any(any(c for c in r) for r in rows):
             cleaned_sheets.append((name, rows))
     return to_markdown(cleaned_sheets, title=Path(filepath).name)
 
 
-def _csv_cols_rows(records: list):
+def csv_cols_rows(records: list):
     """Flatten records to the verified 2n+5 column layout (main.py steps V–VI)."""
     n_span = max_spanning(records)
     cols = list(HEADER_BASE)
@@ -103,7 +103,7 @@ def _csv_cols_rows(records: list):
     for rec in records:
         row = [rec["table_name"], rec["field"], rec["hrc_field"],
                rec["indicator"], rec["hrc_indicator"]]
-        pairs = _spanning_pairs(rec)
+        pairs = spanning_pairs(rec)
         for i in range(n_span):
             code, hrc = pairs[i] if i < len(pairs) else ("NA", "NA")
             row += [code, hrc]
@@ -135,7 +135,7 @@ jobs: dict = {}
 _JOB_TTL = 3600  # seconds a finished job stays readable
 
 
-def _prune_jobs():
+def prune_jobs():
     """Drop finished jobs past their TTL. Running jobs are never pruned —
     they have no upper bound on duration, which is the whole point."""
     cutoff = time.time() - _JOB_TTL
@@ -145,11 +145,11 @@ def _prune_jobs():
         jobs.pop(jid, None)
 
 
-def _start_job(work_fn):
+def start_job(work_fn):
     """Run work_fn() in a background thread; reply 202 with its job id.
     work_fn must return a plain dict — its own success/failure shape — never
     raise (any internal try/except should convert failures to {"error": ...})."""
-    _prune_jobs()
+    prune_jobs()
     job_id = os.urandom(16).hex()
     jobs[job_id] = {"state": "pending", "body": None, "updated": time.time()}
 
@@ -243,11 +243,11 @@ def upload_metadata():
             {"role": "user", "content": wrap(md)},
         ]
         try:
-            reply = _chat_with_retry(history)
+            reply = chat_with_retry(history)
             print("=== RAW REPLY ===\n", reply, "\n =============")
         # External LLM call: openai client raises assorted network/auth error types.
         except Exception as exc:  # noqa: BLE001
-            return {"error": _llm_error_message(exc)}
+            return {"error": llm_error_message(exc)}
         history.append({"role": "assistant", "content": reply})
 
         # Phase 1 auto-continued: the model answered directly in JSON, no questions.
@@ -268,7 +268,7 @@ def upload_metadata():
                 # There was nothing to ask, so this table already *is* the result
                 # for the empty submission — seeding the cache with it means
                 # continuing without adding anything costs no model call.
-                "results": {_answers_fingerprint(""): records},
+                "results": {answers_fingerprint(""): records},
                 "records": records,
             }
             return {
@@ -276,10 +276,10 @@ def upload_metadata():
                 "file_name": file.filename,
                 "extracted_markdown": md,
                 "questions": [],
-                "records": _records_to_ui(records),
+                "records": records_to_ui(records),
             }
 
-        parsed = _parse_questions(reply)
+        parsed = parse_questions(reply)
         sessions[session_id] = {
             "file_name": filename,
             "filepath": str(filepath),
@@ -296,7 +296,7 @@ def upload_metadata():
             "questions": parsed,
         }
 
-    return _start_job(do_work)
+    return start_job(do_work)
 
 
 @app.route("/api/answer", methods=["POST"])
@@ -317,15 +317,15 @@ def submit_answers():
     # That's what lets someone come back from Vérification, edit an answer and
     # get a genuinely new table, while an accidental round-trip through
     # « Retour aux questions » still costs nothing.
-    answers_text = _format_answers(sess["questions"], answers, extra_info)
-    key = _answers_fingerprint(answers_text)
+    answers_text = format_answers(sess["questions"], answers, extra_info)
+    key = answers_fingerprint(answers_text)
 
     cached = sess["results"].get(key)
     if cached is not None:
         # Re-point the session at it: /api/export must hand back the table the
         # producer is looking at, including after reverting to earlier answers.
         sess["records"] = cached
-        return jsonify({"status": "ok", "normalized_table": _records_to_ui(cached)})
+        return jsonify({"status": "ok", "normalized_table": records_to_ui(cached)})
 
     def do_work():
         # Phase 2 (main.py 57-70): apply answers, force JSON if the model re-asks.
@@ -339,7 +339,7 @@ def submit_answers():
         try:
             reply = LLM_API_call.chat(history)
             history.append({"role": "assistant", "content": reply})
-            records, errors = _extract_and_validate(reply)
+            records, errors = extract_and_validate(reply)
             # Retry once, forcing JSON, whenever the reply isn't a usable
             # records table — either unparseable, or (the common case) the
             # model re-asked its Phase 1 questions instead of answering, which
@@ -349,10 +349,10 @@ def submit_answers():
             if records is None or errors:
                 history.append({"role": "user", "content": FORCE_JSON_INSTRUCTION})
                 reply = LLM_API_call.chat(history)
-                records, errors = _extract_and_validate(reply)
+                records, errors = extract_and_validate(reply)
         # External LLM call: openai client raises assorted network/auth error types.
         except Exception as exc:  # noqa: BLE001
-            return {"error": _llm_error_message(exc)}
+            return {"error": llm_error_message(exc)}
 
         if records is None:
             return {"error": "Le modèle n'a pas produit de tableau JSON exploitable."}
@@ -363,10 +363,10 @@ def submit_answers():
         # Cached on success only, so a failed run is retried for real.
         sess["results"][key] = records
         sess["records"] = records
-        table = _records_to_ui(records)
+        table = records_to_ui(records)
         return {"status": "ok", "normalized_table": table}
 
-    return _start_job(do_work)
+    return start_job(do_work)
 
 
 @app.route("/api/export", methods=["POST"])
@@ -386,7 +386,7 @@ def export_table():
     stem = Path(sess["file_name"]).stem
 
     if fmt == "csv":
-        cols, rows = _csv_cols_rows(records)
+        cols, rows = csv_cols_rows(records)
         buf = io.StringIO()
         w = csv.writer(buf)
         w.writerow(cols)
@@ -418,7 +418,7 @@ _KNOWN_CATEGORIES = {
 }
 
 
-def _llm_error_message(exc: Exception) -> str:
+def llm_error_message(exc: Exception) -> str:
     """Turn a chat() failure (missing key, unreachable endpoint, ...) into an
     actionable message instead of letting Flask 500 with an HTML page (which
     breaks the frontend's res.json() and shows as a generic connection error)."""
@@ -437,7 +437,7 @@ def _llm_error_message(exc: Exception) -> str:
     return f"Erreur lors de l'appel au modèle ({name}) : {exc}"
 
 
-def _chat_with_retry(history, attempts=2):
+def chat_with_retry(history, attempts=2):
     """Retry only on transient network/timeout errors — never on a bad
     (but successfully returned) reply; that's a 422 problem, not a retry one."""
     last_exc = None
@@ -454,7 +454,7 @@ def _chat_with_retry(history, attempts=2):
     raise last_exc
 
 
-def _extract_and_validate(reply: str):
+def extract_and_validate(reply: str):
     """(records, errors) for a Phase 2 reply — records is None if reply isn't
     even parseable JSON; errors is the schema-validation error list (empty on
     success). Centralised so both the first attempt and the forced retry use
@@ -465,7 +465,7 @@ def _extract_and_validate(reply: str):
     return records, validate(records)
 
 
-def _parse_questions(text: str) -> list:
+def parse_questions(text: str) -> list:
     """Parse the LLM's Phase 1 JSON question array into dicts the UI expects."""
     raw = extract_array(text)
     if raw is None:
@@ -492,14 +492,14 @@ def _parse_questions(text: str) -> list:
     return questions
 
 
-def _answers_fingerprint(answers_text: str) -> str:
+def answers_fingerprint(answers_text: str) -> str:
     """Stable identity of one Phase 2 submission. Hashed rather than stored raw
     so the per-session cache stays small whatever the producer pastes into
     « informations complémentaires »."""
     return hashlib.sha256(answers_text.encode("utf-8")).hexdigest()
 
 
-def _format_answers(questions: list, answers: dict, extra_info: str = "") -> str:
+def format_answers(questions: list, answers: dict, extra_info: str = "") -> str:
     """Reconstruct the numbered answer text Phase 2 expects, plus any free-text
     context the producer added beyond the model's specific questions."""
     lines = []
@@ -519,7 +519,7 @@ def _format_answers(questions: list, answers: dict, extra_info: str = "") -> str
     return "\n".join(lines)
 
 
-def _records_to_ui(records: list) -> list:
+def records_to_ui(records: list) -> list:
     """Flatten nested spanning_variables into a display string for the Table."""
     result = []
     for r in records:
