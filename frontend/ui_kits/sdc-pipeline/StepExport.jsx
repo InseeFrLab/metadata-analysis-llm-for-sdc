@@ -29,7 +29,7 @@ function StepExport({ records, fileName, sessionId, onRestart }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${stem}_normalise.${fmt}`;
+      a.download = `${stem}_formate.${fmt}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (_e) {

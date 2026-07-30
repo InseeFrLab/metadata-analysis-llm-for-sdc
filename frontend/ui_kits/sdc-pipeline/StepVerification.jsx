@@ -25,9 +25,11 @@ function StepVerification({ markdown, records, onBack, onNext }) {
 
       <div className="sdc-verif">
         <section className="sdc-verif__panel">
-          <h2 className="sdc-panel-title"><i className="ri-table-line" aria-hidden="true"></i>Cet aperçu ne contient que les 10 premiers tableaux sur {records.length}.</h2>
+          <h2 className="sdc-panel-title"><i className="ri-table-line" aria-hidden="true"></i>Cet aperçu contient l'ensemble des {records.length} tableaux. 
+          Si vous n'êtes pas satisfait du résultat, veuillez cliquer sur "Retour aux questions" pour modifier vos réponses ou ajouter des informations complémentaires.
+          </h2>
           <div style={{ marginTop: "1rem" }}>
-            <VDS.Table columns={VCOLUMNS} rows={records.slice(0,10)} striped
+            <VDS.Table columns={VCOLUMNS} rows={records} striped
               caption="" />
           </div>
         </section>
