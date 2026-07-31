@@ -1,5 +1,6 @@
 
 import os
+import re
 
 from openai import OpenAI
 
@@ -14,6 +15,44 @@ FORCE_JSON_INSTRUCTION = (
     "possible et consignez-la dans la note d'incertitude residuelle apres le "
     "\"]\"."
 )
+
+# Un rappel generique ("produisez le JSON") ne dit pas au modele *ce qui* cloche :
+# un tableau bien forme mais de mauvaise forme (croisements aplatis en
+# spanning_1 / hrc_spanning_1 au lieu de spanning_variables) traverse une telle
+# relance inchange. On lui rend donc les erreurs du validateur.
+_ERR_LOC = re.compile(r"^\s*at [^:]*:\s*")
+_MAX_DISTINCT_ERRORS = 8
+
+
+def schema_repair_instruction(errors: list[str]) -> str:
+    """Relance corrective apres un echec de validation du schema.
+
+    Les erreurs se repetent a l'identique sur chaque enregistrement (26 lignes
+    fautives = 26 fois le meme couple de messages) : on les deduplique en
+    retirant leur position, pour que la relance porte le defaut plutot que son
+    volume."""
+    seen = []
+    for err in errors:
+        msg = _ERR_LOC.sub("", err).strip()
+        if msg and msg not in seen:
+            seen.append(msg)
+    shown = seen[:_MAX_DISTINCT_ERRORS]
+    reste = len(seen) - len(shown)
+    if reste > 0:
+        shown.append(f"(et {reste} autre(s) type(s) d'erreur)")
+
+    return (
+        "Le tableau JSON que vous venez d'emettre a ete rejete par la validation "
+        "du schema :\n"
+        + "\n".join(f"- {m}" for m in shown)
+        + "\n\nReemettez le tableau complet en respectant exactement le contrat "
+        "de sortie du §1 : les six cles, sans en ajouter, renommer ni supprimer "
+        "aucune. Les variables de croisement vont dans la cle imbriquee "
+        "\"spanning_variables\": [{\"code\": \"...\", \"hrc\": \"...\"}] — jamais "
+        "en colonnes aplaties spanning_1 / hrc_spanning_1, que le programme "
+        "derive lui-meme en aval. Ne changez pas le contenu des lignes, "
+        "uniquement leur structure si elle est en cause."
+    )
 
 
 def resolve_config(model=None, base_url=None):

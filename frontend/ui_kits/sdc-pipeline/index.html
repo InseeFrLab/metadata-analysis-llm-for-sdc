@@ -81,6 +81,14 @@
   .sdc-md { font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.5; color: var(--text-default); background: var(--background-alt); border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: 1rem; margin: 0; white-space: pre-wrap; overflow-x: auto; max-height: 30rem; }
   .sdc-verif__panel > .ds-alert + div + .ds-alert { margin-top: 1rem; }
 
+  /* Le tableau peut compter des centaines de lignes : on borne sa hauteur à
+     une dizaine de lignes et on fait défiler à l'intérieur, pour garder les
+     boutons de navigation à portée de vue. En-tête figé pendant le défilement
+     (le liseré du bas passe par box-shadow : avec border-collapse, une bordure
+     de cellule figée ne suit pas la cellule). */
+  .sdc-verif .ds-table-scroll { overflow-y: auto; max-height: 32rem; }
+  .sdc-verif .ds-table thead th { position: sticky; top: 0; z-index: 1; border-bottom: 0; box-shadow: inset 0 -1px 0 var(--border-default); }
+
   /* Stats */
   .sdc-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
   .sdc-stat { background: var(--background-default); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: .25rem; }

@@ -82,9 +82,9 @@ Règles absolues sur les valeurs :
 - **Toute valeur est une chaîne.** Ne jamais utiliser `null`, `""`, ou un nombre nu.
 - **Utiliser la chaîne littérale `"NA"`** pour tout attribut sans hiérarchie, et pour tout croisement absent. Ne jamais laisser une valeur vide.
 - **`spanning_variables` contient toujours AU MINIMUM une entrée.** Listez les dimensions réelles dans leur ordre source gauche-droite.
-- Ne pas inventer de clés, renommer des clés, ou scinder une clé. Les clés ci-dessus constituent le schéma complet.
+- Ne pas inventer de clés, renommer des clés, ou scinder une clé. Les clés ci-dessus constituent le schéma complet. En particulier, ne jamais remplacer `spanning_variables` par des clés aplaties (`spanning_1`, `hrc_spanning_1`, `spanning_2`, ...) : les croisements vont toujours dans le tableau imbriqué `spanning_variables`.
 
-Chaque objet s'aplatit un-pour-un sur une ligne à « 2n+5 » colonnes, où « n » est le nombre de variables de croisement — `table_name, field, hrc_field, indicator, hrc_indicator, spanning_1, hrc_spanning_1, spanning_2, hrc_spanning_2, ..., spanning_n, hrc_spanning_n` — qui est le format vérifié en sortie.
+En aval, **le programme** aplatit ensuite chaque objet, un-pour-un, sur une ligne à « 2n+5 » colonnes, où « n » est le nombre de variables de croisement : `table_name, field, hrc_field, indicator, hrc_indicator, spanning_1, hrc_spanning_1, spanning_2, hrc_spanning_2, ..., spanning_n, hrc_spanning_n`. **Cet aplatissement ne vous incombe pas** : il décrit le CSV final, pas votre sortie. Vous n'émettez jamais que l'objet à six clés ci-dessus.
 
 Ne jamais ajouter de colonnes supplémentaires à ce format. En particulier, aucun numéro de demande, nom de feuille ou numéro de feuille n'est jamais une colonne.
 
@@ -209,6 +209,7 @@ Les notes définissent parfois des sous-totaux personnalisés pour une variable 
 1. Appliquez les réponses reçues.
 2. Reprenez la procédure §2 à §8 pour produire le JSON.
 3. **Validation finale — avant d'émettre le JSON, vérifiez :**
+   - que chaque objet porte **exactement** les six clés du §1 — aucune clé ajoutée, renommée ni aplatie — et que les croisements sont bien dans `spanning_variables` sous sa forme imbriquée `[{ "code", "hrc" }]` ;
    - que chaque indicateur appartenant à une hiérarchie détectée possède un `hrc_indicator` différent de `"NA"` ;
    - que chaque champ identifié a été propagé à toutes les lignes concernées ;
    - qu'aucune ligne ne porte `"NA"` lorsqu'une valeur est déductible d'une note ou d'une hiérarchie du fichier.
