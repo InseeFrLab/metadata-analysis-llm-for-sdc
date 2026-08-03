@@ -17,7 +17,6 @@ spec:
     # No secretName: the SSP Cloud ingress controller serves the wildcard
     # certificate for *.lab.sspcloud.fr.
     - hosts:
-        # TODO: must match the host below, and must end in .lab.sspcloud.fr
         - sdc-metadata.lab.sspcloud.fr
   rules:
     - host: sdc-metadata.lab.sspcloud.fr

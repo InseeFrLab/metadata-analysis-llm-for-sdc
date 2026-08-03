@@ -24,7 +24,7 @@ spec:
       containers:
         - name: app
           # TODO: replace <DOCKERHUB_ACCOUNT> with your Docker Hub account.
-          image: <DOCKERHUB_ACCOUNT>/metadata-analysis-llm-for-sdc:latest
+          image: jawadminsee/metadata-analysis-llm-for-sdc:latest
           # `latest` moves, so force a pull on every pod start.
           imagePullPolicy: Always
           ports:
