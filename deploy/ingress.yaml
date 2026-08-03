@@ -12,6 +12,9 @@ metadata:
     # The upload endpoint answers 202 immediately, but keep a long read timeout
     # so a slow serialization of a large workbook is never cut off mid-response.
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: sdc-metadata-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: "Authentification requise"
 spec:
   tls:
     # No secretName: the SSP Cloud ingress controller serves the wildcard
