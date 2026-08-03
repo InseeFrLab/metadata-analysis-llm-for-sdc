@@ -1,0 +1,29 @@
+# Keep the build context small and the image free of local-only state.
+.git
+.github
+.venv
+venv
+__pycache__
+**/__pycache__
+*.py[cod]
+.ruff_cache
+.pytest_cache
+.DS_Store
+
+# Local runtime artefacts — recreated inside the container.
+uploads/
+
+# Test workbooks and outputs must never be baked into a published image.
+# Both forms are needed: a bare `*.ods` only matches the context root.
+*.ods
+*.xlsx
+*.csv
+**/*.ods
+**/*.xlsx
+**/*.csv
+.env
+
+# Documentation is not needed at runtime.
+DEPLOY.md
+README.md
+deploy/

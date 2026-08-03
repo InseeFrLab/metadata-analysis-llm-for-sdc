@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdc-metadata
+  labels:
+    app: sdc-metadata
+spec:
+  # Exactly one pod, for the same reason gunicorn runs a single worker:
+  # sessions and jobs live in the process memory. A second replica would
+  # serve half the polls from a process that knows nothing about the job.
+  replicas: 1
+  strategy:
+    # Recreate, not RollingUpdate: with in-memory state there is no benefit in
+    # having old and new pods answering at the same time during an upgrade.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sdc-metadata
+  template:
+    metadata:
+      labels:
+        app: sdc-metadata
+    spec:
+      containers:
+        - name: app
+          # TODO: replace <DOCKERHUB_ACCOUNT> with your Docker Hub account.
+          image: <DOCKERHUB_ACCOUNT>/metadata-analysis-llm-for-sdc:latest
+          # `latest` moves, so force a pull on every pod start.
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5000
+          env:
+            # Read by resolve_config() in backend/src/LLM_API_call.py.
+            - name: CLE_API_OPENWEBUI
+              valueFrom:
+                secretKeyRef:
+                  name: sdc-metadata-llm
+                  key: CLE_API_OPENWEBUI
+            # Defaults from LLM_API_call.py; override here to change model or
+            # endpoint without rebuilding the image.
+            - name: LLM_BASE_URL
+              value: "https://llm.lab.sspcloud.fr/api/v1"
+            - name: LLM_MODEL
+              value: "qwen3-6-35b-moe"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          # Readiness only, deliberately no liveness probe: a restart would wipe
+          # every in-flight session and job, so the pod must never be killed for
+          # being briefly slow.
+          readinessProbe:
+            httpGet:
+              path: /ui_kits/sdc-pipeline/
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10

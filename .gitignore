@@ -1,6 +1,9 @@
 *.ods
 
-# MacOS metadata 
+# Runtime uploads (backend/app.py writes here; may contain producer data)
+uploads/
+
+# MacOS metadata
 .DS_Store
 
 # Byte-compiled / optimized / DLL files
