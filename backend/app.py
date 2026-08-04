@@ -62,11 +62,14 @@ if _stub:
 sessions: dict = {}
 # sessions[session_id] = {
 #   "file_name": str,        secure filename
-#   "markdown":  str,        serialized Markdown
-#   "baseline":  list,       frozen Phase 1 history (system, workbook, questions).
+#   "markdown":  str|None,   serialized Markdown; cleared to None on export —
+#                            nothing ever reads it back, it just sat in memory
+#   "baseline":  list|None,  frozen Phase 1 history (system, workbook, questions).
 #                            Never mutated after upload — every Phase 2 run is
 #                            rebuilt from it, which is what makes re-answering
-#                            idempotent and free of self-anchoring.
+#                            idempotent and free of self-anchoring. Cleared to
+#                            None on export — the UI has no way back past that
+#                            point, so nothing needs it again.
 #   "questions": list,       parsed question dicts ([] if auto_continued)
 #   "results":   dict,       answers fingerprint -> validated records (per-session
 #                            cache: an unchanged submission costs no model call)
@@ -374,6 +377,14 @@ def export_table():
     if sess["records"] is None:
         msg = "Tableau non encore produit — relancez le pipeline"
         return jsonify({"error": msg}), 409
+
+    # Past this point the UI never lets the producer go back (StepExport has
+    # no "back" action, only a full restart) — so nothing downstream needs
+    # the workbook text or the LLM history anymore, just records for repeat
+    # downloads. Drop the heavy fields rather than let them sit in memory for
+    # the rest of the pod's life.
+    sess["markdown"] = None
+    sess["baseline"] = None
 
     fmt = data.get("format", "csv")
     records = sess["records"]
