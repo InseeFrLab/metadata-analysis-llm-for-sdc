@@ -24,6 +24,6 @@ uploads/
 .env
 
 # Documentation is not needed at runtime.
-DEPLOY.md
+DEPLOY.md 
 README.md
 deploy/

@@ -19,7 +19,7 @@ from werkzeug.utils import secure_filename
 
 from src import LLM_API_call
 from src.clean import clean_sheet, dataframe_to_rows
-from src.data import read_file
+from src.data import read_stream
 from src.extract_JSON_array import extract_array
 from src.LLM_API_call import FORCE_JSON_INSTRUCTION, is_auto_continued
 from src.transform_input import to_markdown, wrap
@@ -40,8 +40,6 @@ app = Flask(
     __name__, static_folder=str(_PROJECT_ROOT / "frontend"), static_url_path=""
 )
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
-app.config["UPLOAD_FOLDER"] = _PROJECT_ROOT / "uploads" / "temp"
-os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # System prompt driving the two-phase pipeline (read once at startup).
 _PROMPT_PATH = _BACKEND / "src" / "prompts" / "prompt_questions.md"
@@ -64,7 +62,6 @@ if _stub:
 sessions: dict = {}
 # sessions[session_id] = {
 #   "file_name": str,        secure filename
-#   "filepath":  str,        absolute temp path
 #   "markdown":  str,        serialized Markdown
 #   "baseline":  list,       frozen Phase 1 history (system, workbook, questions).
 #                            Never mutated after upload — every Phase 2 run is
@@ -81,15 +78,15 @@ sessions: dict = {}
 # Pipeline glue (mirrors main.py, reusing the src/ primitives)
 # ---------------------------------------------------------------------------
 
-def serialize(filepath) -> str:
+def serialize(file_bytes: bytes, filename: str) -> str:
     """Workbook → cleaned Markdown (main.py steps I–III)."""
-    data = read_file(str(filepath))
+    data = read_stream(io.BytesIO(file_bytes), filename)
     cleaned_sheets = []
     for name, df in data.items():
         rows = clean_sheet(dataframe_to_rows(df))
         if any(any(c for c in r) for r in rows):
             cleaned_sheets.append((name, rows))
-    return to_markdown(cleaned_sheets, title=Path(filepath).name)
+    return to_markdown(cleaned_sheets, title=filename)
 
 
 def csv_cols_rows(records: list):
@@ -228,12 +225,11 @@ def upload_metadata():
 
     session_id = os.urandom(16).hex()
     filename = secure_filename(f"{session_id[:8]}_{file.filename}")
-    filepath = app.config["UPLOAD_FOLDER"] / filename
-    file.save(str(filepath))
+    file_bytes = file.read()
 
     def do_work():
         try:
-            md = serialize(filepath)
+            md = serialize(file_bytes, filename)
         # Untrusted workbook: pandas/openpyxl/odfpy each raise their own error types.
         except Exception as exc:  # noqa: BLE001
             return {"error": f"Échec de la sérialisation : {exc}"}
@@ -261,7 +257,6 @@ def upload_metadata():
                 return {"error": msg}
             sessions[session_id] = {
                 "file_name": filename,
-                "filepath": str(filepath),
                 "markdown": md,
                 "baseline": history,
                 "questions": [],
@@ -282,7 +277,6 @@ def upload_metadata():
         parsed = parse_questions(reply)
         sessions[session_id] = {
             "file_name": filename,
-            "filepath": str(filepath),
             "markdown": md,
             "baseline": history,
             "questions": parsed,
