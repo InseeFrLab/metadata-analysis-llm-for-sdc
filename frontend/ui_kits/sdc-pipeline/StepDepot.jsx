@@ -11,7 +11,7 @@ function StepDepot({ file, onSelect, onRemove, onNext }) {
           <p className="sdc-lead">
             Glissez un fichier <b>.ods</b>, <b>.xlsx</b> ou <b>.csv</b> décrivant les tableaux statistiques
             demandés. Le modèle le lit, vous pose des questions si nécessaire, puis produit un tableau
-            formatté prêt pour la pose du secret.
+            formaté prêt pour la pose du secret.
           </p>
         </div>
       </div>
