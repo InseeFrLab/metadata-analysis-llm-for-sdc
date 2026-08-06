@@ -36,7 +36,7 @@ uv run python backend/app.py
 ```
 **Important** : une fois l'application lancée, retourner sur « Mes services » dans Onyxia, cliquer sur « Ouvrir » pour le service en cours, puis cliquer sur « ce lien » après « Vous pouvez vous connecter à votre port personnalisé (5000) en utilisant ce lien ».
 
-## 2.2  Configuration des tokens nécessaires au fonctionnement de l'application.
+## 2.2 Configuration des tokens nécessaires au fonctionnement de l'application.
 
 ### 2.2.1 Créer une clé API sur le SSP Cloud. 
 1) Se connecter à Onyxia.
@@ -49,7 +49,7 @@ uv run python backend/app.py
 ### 2.2.2 Créer un token sur GitHub
 Pour créer un token GitHub, allez dans les paramètres de votre compte, sélectionnez « Developer settings » puis « Personal access tokens » (tokens classic), et générez le token.
 
-### 2.2.3 Créer un compte DockerHub et génerer un token. 
+### 2.2.3 Créer un compte DockerHub et générer un token. 
 Connectez-vous sur (https://hub.docker.com/), cliquez sur votre avatar en haut à droite puis sur « Account Settings ». Dans le menu de gauche, cliquez sur « Personal access tokens », puis sur « Generate new token ». Donnez-lui une description, choisissez une date d'expiration (ou « None ») et la permission « Read & Write », puis cliquez sur « Generate ». Copiez immédiatement le token affiché : il ne sera plus jamais visible ensuite. Il servira de valeur au secret `DOCKERHUB_TOKEN` du dépôt GitHub (utilisé par `.github/workflows/docker.yaml`), aux côtés de `DOCKERHUB_USERNAME` pour votre nom d'utilisateur.
 
 Après vous être munis de vos `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN`, aller sur GitHub --> « Settings » dans la barre du haut du dépôt (il faut avoir l'autorisation pour voir ce bouton ; si vous ne l'avez pas, demandez-la à votre supérieur) --> « Secrets and variables » --> « New Repository Secret » --> nommer le secret `DOCKERHUB_USERNAME` et insérer votre secret, puis faire la même chose pour `DOCKERHUB_TOKEN`.
@@ -185,4 +185,4 @@ Les autres fichiers (`uv.lock`, `.gitignore`, `.dockerignore`, `.python-version`
 uv run python backend/main.py your_input_file.ods -o your_output_file.csv
 ```
 
-! Cette commande lance le pipeline et crée your_output_file.csv dans le dépôt. À utiliser seulement par ceux qui prennent le code en main, pas ceux qui veulent simplement utiliser l'app. Si vous voulez utiliser l'app, veuillez vous référer à la section « Comment utiliser l'app ».
+! Cette commande lance le pipeline et crée your_output_file.csv dans le dépôt. À utiliser seulement par ceux qui prennent le code en main, pas ceux qui veulent simplement utiliser l'app. Si vous voulez utiliser l'app, veuillez vous référer à la section « Comment utiliser l'application ».
