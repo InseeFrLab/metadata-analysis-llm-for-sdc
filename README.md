@@ -58,7 +58,7 @@ Pour créer un token GitHub, allez dans les paramètres de votre compte, sélect
 ## Créer un compte DockerHub (https://hub.docker.com/) et génerer un token. 
 Connectez-vous sur hub.docker.com, cliquez sur votre avatar en haut à droite puis sur « Account Settings ». Dans le menu de gauche, cliquez sur « Personal access tokens », puis sur « Generate new token ». Donnez-lui une description, choisissez une date d'expiration (ou « None ») et la permission « Read & Write », puis cliquez sur « Generate ». Copiez immédiatement le token affiché : il ne sera plus jamais visible ensuite. Il servira de valeur au secret `DOCKERHUB_TOKEN` du dépôt GitHub (utilisé par `.github/workflows/docker.yaml`), aux côtés de `DOCKERHUB_USERNAME` pour votre nom d'utilisateur.
 
-Après s'etre munis de son `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN`, aller sur Github --> Settings dans la barre du haut du repo (Il faut avoir l'autorisation pour voir ce bouton, si vs ne l'avez pas demandez la a votre superieur) --> Secrets and variables --> New Repository Secret -->  Nommer le secret `DOCKERHUB_USERNAME` et inserer votre secret --> faire la mm chose pour `DOCKERHUB_TOKEN`.
+Après vous être munis de vos `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN`, aller sur GitHub --> « Settings » dans la barre du haut du dépôt (il faut avoir l'autorisation pour voir ce bouton ; si vous ne l'avez pas, demandez-la à votre supérieur) --> « Secrets and variables » --> « New Repository Secret » --> nommer le secret `DOCKERHUB_USERNAME` et insérer votre secret, puis faire la même chose pour `DOCKERHUB_TOKEN`.
 
 ## Command-line Interface
 
