@@ -9,16 +9,16 @@ pipeline produit un tableau formaté.
 
 ---
 
- # Comment utiliser l'app : 
+ # 1. Comment utiliser l'application : 
  Ouvrez votre navigateur et copiez l'adresse suivante : sdc-metadata.lab.sspcloud.fr, puis
  entrez le nom d'utilisateur et le mot de passe qui vous ont été fournis. 
 
  --- 
 
 
-# Comment lancer l'application en local. 
+# 2. Comment lancer l'application à partir du SSP Cloud (Onyxia). 
 
-## Sur SSP Cloud (Onyxia)
+## 2.1 Configuration du service Onyxia.
 
 1. Ouvrir Onyxia sur le SSP Cloud et se connecter.
 2. Lancer un service **VSCode-python** avec :
@@ -32,19 +32,13 @@ pipeline produit un tableau formaté.
 ```{bash}
 cd metadata-analysis-llm-for-sdc
 uv sync
-```
-
-# Lancer l'app en local
-
-```{bash}
 uv run python backend/app.py
 ```
-
 **Important** : une fois l'application lancée, retourner sur « Mes services » dans Onyxia, cliquer sur « Ouvrir » pour le service en cours, puis cliquer sur « ce lien » après « Vous pouvez vous connecter à votre port personnalisé (5000) en utilisant ce lien ».
 
-!! Ce pipeline n'est pas encore équipé pour traiter tous les cas, si vous avez configuré votre service correctement et que vous voyez une erreur apparaître, cliquez à nouveau sur le bouton de la phase où vous êtes !!
+## 2.2  Configuration des tokens nécessaires au fonctionnement de l'application.
 
-## Créer une clé API sur le SSP Cloud. 
+### 2.2.1 Créer une clé API sur le SSP Cloud. 
 1) Se connecter à Onyxia.
 2) Appuyer sur AI Chat en haut à droite de la page.
 3) Cliquer sur le Profil, en haut à droite, puis sur réglages --> compte --> Clés d'API
@@ -52,27 +46,19 @@ uv run python backend/app.py
 5) Revenir sur Onyxia et cliquer sur Secrets --> Nouveau secret. Appeler celui-ci « llm ».
 6) Rentrer dans le secret. Copier la valeur de la clé dans « Valeur », et « CLE_API_OPENWEBUI » dans « Nom de la variable ».
 
-## Créer un token sur GitHub
+### 2.2.2 Créer un token sur GitHub
 Pour créer un token GitHub, allez dans les paramètres de votre compte, sélectionnez « Developer settings » puis « Personal access tokens » (tokens classic), et générez le token.
 
-## Créer un compte DockerHub (https://hub.docker.com/) et génerer un token. 
-Connectez-vous sur hub.docker.com, cliquez sur votre avatar en haut à droite puis sur « Account Settings ». Dans le menu de gauche, cliquez sur « Personal access tokens », puis sur « Generate new token ». Donnez-lui une description, choisissez une date d'expiration (ou « None ») et la permission « Read & Write », puis cliquez sur « Generate ». Copiez immédiatement le token affiché : il ne sera plus jamais visible ensuite. Il servira de valeur au secret `DOCKERHUB_TOKEN` du dépôt GitHub (utilisé par `.github/workflows/docker.yaml`), aux côtés de `DOCKERHUB_USERNAME` pour votre nom d'utilisateur.
+### 2.2.3 Créer un compte DockerHub et génerer un token. 
+Connectez-vous sur (https://hub.docker.com/), cliquez sur votre avatar en haut à droite puis sur « Account Settings ». Dans le menu de gauche, cliquez sur « Personal access tokens », puis sur « Generate new token ». Donnez-lui une description, choisissez une date d'expiration (ou « None ») et la permission « Read & Write », puis cliquez sur « Generate ». Copiez immédiatement le token affiché : il ne sera plus jamais visible ensuite. Il servira de valeur au secret `DOCKERHUB_TOKEN` du dépôt GitHub (utilisé par `.github/workflows/docker.yaml`), aux côtés de `DOCKERHUB_USERNAME` pour votre nom d'utilisateur.
 
 Après vous être munis de vos `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN`, aller sur GitHub --> « Settings » dans la barre du haut du dépôt (il faut avoir l'autorisation pour voir ce bouton ; si vous ne l'avez pas, demandez-la à votre supérieur) --> « Secrets and variables » --> « New Repository Secret » --> nommer le secret `DOCKERHUB_USERNAME` et insérer votre secret, puis faire la même chose pour `DOCKERHUB_TOKEN`.
 
-## Command-line Interface
-
-```{bash}
-uv run python backend/main.py your_input_file.ods -o your_output_file.csv
-```
-
-! Cette commande lance le pipeline et crée your_output_file.csv dans le dépôt. À utiliser seulement par ceux qui prennent le code en main, pas ceux qui veulent simplement utiliser l'app. Si vous voulez utiliser l'app, veuillez vous référer à la section « Comment utiliser l'app ».
-
-# Reprendre le code en main 
+# 3. Reprendre le code en main 
 
 **NB :** Avant de commencer à explorer la partie suivante, veuillez vous référer à la sous-partie « Sur le SSP Cloud (Onyxia) » de la partie « Comment lancer l'application en local. » Suivez ces instructions pour lancer votre service.
 
-## Structure du repo git: 
+## 3.1 Structure du repo git: 
 
 Arborescence complète du dépôt :
 
@@ -127,20 +113,20 @@ metadata-analysis-llm-for-sdc/
 └── uv.lock
 ```
 
-## Role de chaque fichier. 
+## 3.2 Role de chaque fichier. 
 
 **Backend**
 
 | Fichier | Rôle |
 |---|---|
-| `backend/app.py` | Serveur Flask : expose l'API (`/api/upload`, `/api/answer`, `/api/export`, `/api/jobs/<id>`) et sert l'interface statique du dossier `frontend/`. |
-| `backend/main.py` | Interface en ligne de commande : exécute le pipeline complet sur un fichier local et écrit un CSV. |
+| `backend/app.py` | Configure le serveur Flask, définit les routes de l'API (upload, réponses, exports) et charge les fichiers du dossier frontend. |
+| `backend/main.py` | Script en ligne de commande permettant de lancer tout le processus d'analyse directement depuis le terminal sur un fichier local, avec export automatique des résultats au format CSV. |
 | `backend/src/LLM_API_call.py` | Configure et appelle le LLM (client OpenAI), et construit les messages de relance/correction envoyés au modèle. |
-| `backend/src/clean.py` | Nettoie les cellules et les lignes des feuilles extraites (espaces, sauts de ligne, lignes/cellules vides en fin de feuille). |
+| `backend/src/clean.py` | Nettoie les cellules et les lignes des feuilles extraites du classeur (espaces, sauts de ligne, lignes/cellules vides en fin de feuille). |
 | `backend/src/data.py` | Lit les classeurs de métadonnées (en local ou sur S3/MinIO) et détecte leur type de fichier (.ods/.xlsx/.csv). |
 | `backend/src/extract_JSON_array.py` | Extrait le tableau JSON brut de la réponse texte du modèle. |
 | `backend/src/transform_input.py` | Convertit les feuilles nettoyées en Markdown, au format attendu par le prompt. |
-| `backend/src/transform_output.py` | Dérive les colonnes « spanning » (variables de croisement) à partir des enregistrements validés. |
+| `backend/src/transform_output.py` | Détermine le nombre de variables de croisement qu'aura le CSV final. |
 | `backend/src/validate_json_output.py` | Valide les enregistrements JSON produits par le modèle par rapport au schéma de sortie. |
 | `backend/src/__init__.py` | Fichier vide qui fait de `src` un package Python. |
 | `backend/src/prompts/prompt_questions.md` | Prompt système qui pilote les deux phases du pipeline (questions puis JSON). |
@@ -150,16 +136,16 @@ metadata-analysis-llm-for-sdc/
 
 | Fichier / dossier | Rôle |
 |---|---|
-| `frontend/ui_kits/sdc-pipeline/index.html` | Page hôte : charge le design system et les données de démonstration, puis monte l'application React. |
+| `frontend/ui_kits/sdc-pipeline/index.html` | Page web principale qui charge l'environnement graphique et démarre l'application React. |
 | `frontend/ui_kits/sdc-pipeline/App.jsx` | Orchestrateur de l'application : état, appels à l'API, navigation entre les quatre étapes. |
 | `frontend/ui_kits/sdc-pipeline/Shell.jsx` | En-tête, pied de page et mise en page générale (`Layout`). |
-| `frontend/ui_kits/sdc-pipeline/StepDepot.jsx` | Étape 1 — dépôt du classeur de métadonnées. |
-| `frontend/ui_kits/sdc-pipeline/StepQuestions.jsx` | Étape 2 — questions du modèle et saisie des réponses du producteur. |
-| `frontend/ui_kits/sdc-pipeline/StepVerification.jsx` | Étape 3 — aperçu du Markdown sérialisé et du tableau normalisé. |
-| `frontend/ui_kits/sdc-pipeline/StepExport.jsx` | Étape 4 — téléchargement du tableau normalisé au format CSV. |
+| `frontend/ui_kits/sdc-pipeline/StepDepot.jsx` | Dépôt du classeur de métadonnées. |
+| `frontend/ui_kits/sdc-pipeline/StepQuestions.jsx` | Questions du modèle et saisie des réponses du producteur. |
+| `frontend/ui_kits/sdc-pipeline/StepVerification.jsx` | Aperçu du Markdown sérialisé et du tableau formaté. |
+| `frontend/ui_kits/sdc-pipeline/StepExport.jsx` | Téléchargement du tableau formaté au format CSV. |
 | `frontend/ui_kits/sdc-pipeline/data.js` | Jeu de données factice, utilisé pour prévisualiser l'interface sans backend. |
 | `frontend/ui_kits/sdc-pipeline/README.md` | Documentation de ce kit d'interface (étapes, fichiers, lancement). |
-| `frontend/tokens/` (dossier) | Variables de design (couleurs, typographie, espacements, polices) du DSFR. |
+| `frontend/tokens/` (dossier) | Variables de design (couleurs, typographie, espacements, polices) du [DSFR](https://www.systeme-de-design.gouv.fr/version-courante/fr). |
 | `frontend/assets/` (dossier) | Ressources statiques : logo Insee, pictogrammes et polices. |
 | `frontend/_ds_bundle.js` | Bibliothèque de composants d'interface (bouton, tableau, alerte...) partagée par toutes les étapes. |
 | `frontend/styles.css` | Point d'entrée CSS : importe les fichiers de `tokens/`. |
@@ -176,11 +162,11 @@ metadata-analysis-llm-for-sdc/
 
 Les autres fichiers (`uv.lock`, `.gitignore`, `.dockerignore`, `.python-version`...) sont des fichiers de configuration qui ne sont pas détaillés dans cette partie. 
 
-## packages et dépendances. 
+## 3.3 Packages et dépendances. 
 
-| Paquet | Pourquoi |
+| Packages | Pourquoi |
 |---|---|
-| `flask` | Framework web utilisé pour exposer l'API et servir l'interface. |
+| `flask` | Framework web utilisé pour exposer l'API et fournir l'interface utilisateur. |
 | `gunicorn` | Serveur WSGI de production utilisé pour lancer l'application dans le conteneur (voir `Dockerfile`). |
 | `jsonschema` | Valide le tableau JSON produit par le modèle par rapport au schéma de sortie attendu. |
 | `odfpy` | Permet la lecture des classeurs au format `.ods`. |
@@ -193,3 +179,10 @@ Les autres fichiers (`uv.lock`, `.gitignore`, `.dockerignore`, `.python-version`
 | `tabulate` | Formatage de tableaux pour un affichage lisible en ligne de commande. |
 | `werkzeug` | Utilitaires HTTP sous-jacents à Flask (gestion des fichiers, exceptions...). |
 
+## 3.4 Interface en ligne de commande (ILC)
+
+```{bash}
+uv run python backend/main.py your_input_file.ods -o your_output_file.csv
+```
+
+! Cette commande lance le pipeline et crée your_output_file.csv dans le dépôt. À utiliser seulement par ceux qui prennent le code en main, pas ceux qui veulent simplement utiliser l'app. Si vous voulez utiliser l'app, veuillez vous référer à la section « Comment utiliser l'app ».
