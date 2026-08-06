@@ -9,7 +9,7 @@ pipeline produit un tableau plat normalisé.
 
 ---
 
- TODO: Comment utiliser l'app : 
+ # Comment utiliser l'app : 
  Ouvrez votre navigateur et copiez l'adresse suivante : sdc-metadata.lab.sspcloud.fr
  Entrez le nom d'utilisateur et le mot de passe qui vous ont été fournis. 
 
