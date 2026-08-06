@@ -56,9 +56,54 @@ Après vous être munis de vos `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN`, aller 
 
 # 3. Reprendre le code en main 
 
-## 3.1 full pipeline end to end: what happnens to a file ftom start to finish. 
+## 3.1 Pipeline complet : trajet d'un fichier, de bout en bout. 
 
-ToDO
+```
+classeur.ods / .xlsx / .csv        (fichier déposé par le producteur)
+        │
+        ▼
+Lecture (data.py)
+   in  : classeur
+   out : 1 DataFrame par feuille
+        │
+        ▼
+Nettoyage (clean.py)
+   in  : DataFrame
+   out : lignes nettoyées
+        │
+        ▼
+Mise en Markdown (transform_input.py)
+   in  : lignes nettoyées
+   out : un bloc Markdown, balisé <metadonnees>
+        │
+        ▼
+Appel au LLM — Phase 1 (LLM_API_call.py)
+   in  : Markdown + prompt système
+   out : questions, ou directement un tableau JSON si aucune ambiguïté
+        │
+        ▼
+Questions au producteur (StepQuestions.jsx)   — sauté si la Phase 1 n'a posé aucune question
+   in  : questions du modèle
+   out : réponses du producteur
+        │
+        ▼
+Appel au LLM — Phase 2 (LLM_API_call.py)   — sauté si la Phase 1 a déjà renvoyé un tableau JSON
+   in  : réponses du producteur
+   out : tableau JSON
+        │
+        ▼
+Extraction + validation (extract_JSON_array.py, validate_json_output.py)
+   in  : réponse du modèle
+   out :  JSON validé contre le schéma
+        │
+        ▼
+Mise en colonnes (transform_output.py)
+   in  : enregistrements validés
+   out : structure du tableau csv
+        │
+        ▼
+classeur_formate.csv
+```
 
 **NB :** Avant de commencer à explorer la partie suivante, veuillez vous référer à la sous-partie « Sur le SSP Cloud (Onyxia) » de la partie « Comment lancer l'application en local. » Suivez ces instructions pour lancer votre service.
 
