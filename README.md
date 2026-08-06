@@ -56,9 +56,13 @@ Après vous être munis de vos `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN`, aller 
 
 # 3. Reprendre le code en main 
 
+## 3.1 full pipeline end to end: what happnens to a file ftom start to finish. 
+
+ToDO
+
 **NB :** Avant de commencer à explorer la partie suivante, veuillez vous référer à la sous-partie « Sur le SSP Cloud (Onyxia) » de la partie « Comment lancer l'application en local. » Suivez ces instructions pour lancer votre service.
 
-## 3.1 Structure du repo git: 
+## 3.2 Structure du repo git: 
 
 Arborescence complète du dépôt :
 
@@ -113,7 +117,7 @@ metadata-analysis-llm-for-sdc/
 └── uv.lock
 ```
 
-## 3.2 Role de chaque fichier. 
+## 3.3 Rôle de chaque fichier. 
 
 **Backend**
 
@@ -162,7 +166,7 @@ metadata-analysis-llm-for-sdc/
 
 Les autres fichiers (`uv.lock`, `.gitignore`, `.dockerignore`, `.python-version`...) sont des fichiers de configuration qui ne sont pas détaillés dans cette partie. 
 
-## 3.3 Packages et dépendances. 
+## 3.4 Packages et dépendances. 
 
 | Packages | Pourquoi |
 |---|---|
@@ -179,7 +183,7 @@ Les autres fichiers (`uv.lock`, `.gitignore`, `.dockerignore`, `.python-version`
 | `tabulate` | Formatage de tableaux pour un affichage lisible en ligne de commande. |
 | `werkzeug` | Utilitaires HTTP sous-jacents à Flask (gestion des fichiers, exceptions...). |
 
-## 3.4 Interface en ligne de commande (ILC)
+## 3.5 Interface en ligne de commande (ILC)
 
 ```{bash}
 uv run python backend/main.py your_input_file.ods -o your_output_file.csv
