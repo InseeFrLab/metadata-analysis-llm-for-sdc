@@ -9,7 +9,14 @@ pipeline produit un tableau plat normalisé.
 
 ---
 
-# Comment lancer l'application
+ TODO: Comment utiliser l'app: 
+ aller sur le browser et copier l'adresse suivante: sdc-metadata.lab.sspcloud.fr
+ Entrez le username et le mot de passe qui vous a été fourni. 
+
+ --- 
+
+
+# Comment lancer l'application en local. 
 
 ## Sur SSP Cloud (Onyxia)
 
@@ -18,6 +25,7 @@ pipeline produit un tableau plat normalisé.
    - le nom de la clé API personnelle (comme appelée dans « Secrets » sur Onyxia — pas la clé elle-même) dans la rubrique **« Secret »** de Vault. Plus d'informations ci-dessous pour créer votre clé API personnelle.
    - le repo `https://github.com/InseeFrLab/metadata-analysis-llm-for-sdc.git` dans la rubrique **« Repository »** de Git. Plus d'informations ci-dessous pour créer votre Token sur Git.
    - cliquer sur **« Network access »** → **« Enable access to your service through specific ports »**. Par défaut Onyxia choisit Port 1 = 5000 (mettre la valeur 5000 si ce n'est pas déjà le cas).
+   - Dans 'Role', activez le bouton 'Enabled' et choisissez, le role 'admin'.
 3. Lancer le service.
 4. Une fois VSCode ouvert, ouvrir un nouveau terminal, puis :
 
@@ -26,7 +34,7 @@ cd metadata-analysis-llm-for-sdc
 uv sync
 ```
 
-# Lancer l'app
+# Lancer l'app en local
 
 ```{bash}
 uv run python backend/app.py
@@ -47,10 +55,37 @@ uv run python backend/app.py
 ## Créer un token sur git
 Pour créer un token GitHub, allez dans les paramètres de votre compte, sélectionnez "Developer settings" puis "Personal access tokens", (tokens classic) et générez le token.
 
+## Créer un compte DockerHub (https://hub.docker.com/) et génerer un token. 
+TODO: explain how to create the token in dockerhub 
+
 ## Command-line Interface
 
 ```{bash}
 uv run python backend/main.py your_input_file.ods -o your_output_file.csv
 ```
 
-! This command runs the pipeline and saves the result inside metadata-analysis-llm-for-sdc
+! Cette commande lance le pipeline et créer your_output_file.csv dans le repo. A utiliser seulement par ceux qui prennent le code en main, pas ceux qui veulent simplment utiliser l'app. Si vous voulez utiliser l'app veuillez vous référer à la section ' Comment utiliser l'app '
+
+# Reprendre le code en main 
+
+**NB: **Avant de commencer à explorer la partir suivante, veuillez vous référer à la sous-partie 'Sur le SSP Cloud (Onyxia)' de la partie 'Comment lancer l'application en local.' Suivez ces instructions pour lancer votre service**
+
+## Structure du repo git: 
+
+TODO: Here I need a diagram that shows clearly the structure, which files are where (without showing the complete path of course, just visually)
+
+## Role de chaque fichier. 
+
+TODO: Have a table that explains in 1 line  what that file does for each script in the following way (the repo is pretty clean in that regard but better have good and thorough doc too): 
+for backend, have a line for each python script: app.py main.py and each file in src
+for frontend, have a line for: each file inside ui_kits/sdc-pipeline, tokens and assets as folders, _ds_bundle.js, styles.css
+have a line for Dockerfile 
+have a line for .github/workflows/docker.yaml 
+have a line for each of the yaml files inside deploy 
+
+The other files (uv, ignores, python version) are config files that are not to be explained in this part. 
+
+## packages et dépendances. 
+
+TODO: Create another table that lists the dependencies and packages managed by uv, one line to explain why each. 
+
