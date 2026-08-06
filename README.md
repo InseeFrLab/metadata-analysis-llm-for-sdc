@@ -1,11 +1,11 @@
 # metadata-analysis-llm-for-sdc
 
-Utilisation d'un LLM pour analyser des fichiers de métadonnées décrivant la publication de
+Utilisation d'un LLM pour formater des fichiers de métadonnées décrivant la publication de
 tableaux statistiques, et les rendre exploitables par l'analyse automatique et la pose du secret
 via **rtauargus**.
 
 À partir d'un classeur de métadonnées (un producteur décrit les tableaux qu'il demande), le
-pipeline produit un tableau plat normalisé.
+pipeline produit un tableau formaté.
 
 ---
 
