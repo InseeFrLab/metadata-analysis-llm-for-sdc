@@ -145,7 +145,6 @@ metadata-analysis-llm-for-sdc/
 │   │       ├── App.jsx
 │   │       ├── data.js
 │   │       ├── index.html
-│   │       ├── README.md
 │   │       ├── Shell.jsx
 │   │       ├── StepDepot.jsx
 │   │       ├── StepExport.jsx
