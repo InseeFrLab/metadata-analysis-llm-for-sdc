@@ -237,18 +237,31 @@ uv run python backend/main.py your_input_file.ods -o your_output_file.csv
 
 # 4. Redéployer l'application
 
-## 4.1. Créer un compte DockerHub et générer un token. 
+## 4.1. Créer un compte DockerHub, générer un token, initialiser le repo
 Connectez-vous sur (https://hub.docker.com/), cliquez sur votre avatar en haut à droite puis sur « Account Settings ». Dans le menu de gauche, cliquez sur « Personal access tokens », puis sur « Generate new token ». Donnez-lui une description, choisissez une date d'expiration (ou « None ») et la permission « Read & Write », puis cliquez sur « Generate ». Copiez immédiatement le token affiché : il ne sera plus jamais visible ensuite. Il servira de valeur au secret `DOCKERHUB_TOKEN` du dépôt GitHub (utilisé par `.github/workflows/docker.yaml`), aux côtés de `DOCKERHUB_USERNAME` pour votre nom d'utilisateur.
 
 Après vous être munis de vos `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN`, aller sur GitHub --> « Settings » dans la barre du haut du dépôt (il faut avoir l'autorisation pour voir ce bouton ; si vous ne l'avez pas, demandez-la à votre supérieur) --> « Secrets and variables » --> « New Repository Secret » --> nommer le secret `DOCKERHUB_USERNAME` et insérer votre secret, puis faire la même chose pour `DOCKERHUB_TOKEN`.
 
-## 4.2. Modifier les secrets du dépôt GitHub
+Il faut initialiser un repo qu'on nomme `metadata-analysis-llm-for-sdc`. Pour ce faire aller dans `Repositories`, puis cliquer sur `Create repository`.
+
+## 4.2. Modifier le nom de l'image
+
+Pour publier la nouvelle image sur Docker Hub, il faut préciser son nouveau nom dans `deploy/deployment.yaml`.
+
+```yaml
+      containers:
+        - name: app
+          # TODO: replace "sectionm4s" with your Docker Hub username.
+          image: sectionm4s/metadata-analysis-llm-for-sdc:latest
+```
+
+## 4.3. Modifier les secrets du dépôt GitHub
 
 Aller sur le dépôt [Git Hub](https://github.com/InseeFrLab/metadata-analysis-llm-for-sdc), puis `Settings`, sur la colonne de gauche `Secrets and variables`, puis `Actions`. Modifier `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN`.
 
 La page `Actions secrets and variables` sert à stocker des informations que le workflow GitHub Actions doit utiliser sans avoir à les écrire directement dans le code.
 
-## 4.3. Déployer clé API sur Kubernetes
+## 4.4. Déployer clé API sur Kubernetes
 
 Il faut modifier la valeur de `CLE_API_OPENWEBUI` que l'on trouve dans `deploy/deployment.yaml`. Pour ce faire on crée un fichier `secret.yaml` en utilisant ce modèle :
 
@@ -268,7 +281,7 @@ Ouvrir un terminal et écrire ces commandes :
 kubectl apply -f secret.yaml
 ```
 
-## 4.4. Déployer l'application 
+## 4.5. Déployer l'application 
 
 Pour déployer l'application il faut écrire dans le terminal la ligne de commande suivante.
 
