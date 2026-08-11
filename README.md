@@ -234,3 +234,58 @@ uv run python backend/main.py your_input_file.ods -o your_output_file.csv
 ```
 
 ! Cette commande lance le pipeline et crée your_output_file.csv dans le dépôt. À utiliser seulement par ceux qui prennent le code en main, pas ceux qui veulent simplement utiliser l'app. Si vous voulez utiliser l'app, veuillez vous référer à la section « Comment utiliser l'application ».
+
+# 4. Redéployer l'application
+
+## 4.1. Créer un compte DockerHub et générer un token. 
+Connectez-vous sur (https://hub.docker.com/), cliquez sur votre avatar en haut à droite puis sur « Account Settings ». Dans le menu de gauche, cliquez sur « Personal access tokens », puis sur « Generate new token ». Donnez-lui une description, choisissez une date d'expiration (ou « None ») et la permission « Read & Write », puis cliquez sur « Generate ». Copiez immédiatement le token affiché : il ne sera plus jamais visible ensuite. Il servira de valeur au secret `DOCKERHUB_TOKEN` du dépôt GitHub (utilisé par `.github/workflows/docker.yaml`), aux côtés de `DOCKERHUB_USERNAME` pour votre nom d'utilisateur.
+
+Après vous être munis de vos `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN`, aller sur GitHub --> « Settings » dans la barre du haut du dépôt (il faut avoir l'autorisation pour voir ce bouton ; si vous ne l'avez pas, demandez-la à votre supérieur) --> « Secrets and variables » --> « New Repository Secret » --> nommer le secret `DOCKERHUB_USERNAME` et insérer votre secret, puis faire la même chose pour `DOCKERHUB_TOKEN`.
+
+## 4.2. Modifier les secrets du dépôt GitHub
+
+Aller sur le dépôt [Git Hub](https://github.com/InseeFrLab/metadata-analysis-llm-for-sdc), puis `Settings`, sur la colonne de gauche `Secrets and variables`, puis `Actions`. Modifier `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN`.
+
+La page `Actions secrets and variables` sert à stocker des informations que le workflow GitHub Actions doit utiliser sans avoir à les écrire directement dans le code.
+
+## 4.3. Déployer clé API sur Kubernetes
+
+Il faut modifier la valeur de `CLE_API_OPENWEBUI` que l'on trouve dans `deploy/deployment.yaml`. Pour ce faire on crée un fichier `secret.yaml` en utilisant ce modèle :
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sdc-metadata-llm
+type: Opaque
+stringData:
+  CLE_API_OPENWEBUI: "xxx"
+```
+Il faut remplacer "xxx" par sa clé API. **Il ne faut pas pusher ce fichier avec sa clé API sur le repo car la clé doit rester confidentielle**. Il n'y a pas besoin de pusher ce fichier.
+
+Ouvrir un terminal et écrire ces commandes :
+```bash
+kubectl apply -f secret.yaml
+```
+
+## 4.4. Déployer l'application 
+
+Pour déployer l'application il faut écrire dans le terminal la ligne de commande suivante.
+
+```bash
+kubectl apply -f deploy/
+```
+
+Attention si vous n'êtes pas sûrs que le déploiement fonctionnera il vaut mieux modifier l'adresse dans `ingress.yaml` pour ne pas "casser" l'application qui fonctionne.
+
+Il faut modifier ces lignes :
+
+```yaml
+spec:
+  tls:
+    - hosts:
+        - sdc-metadata.lab.sspcloud.fr # modifier
+  rules:
+    - host: sdc-metadata.lab.sspcloud.fr # modifier
+```
+
