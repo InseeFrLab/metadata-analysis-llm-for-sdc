@@ -13,6 +13,8 @@ pipeline produit un tableau formaté.
  Ouvrez votre navigateur et copiez l'adresse suivante : sdc-metadata.lab.sspcloud.fr, puis
  entrez le nom d'utilisateur et le mot de passe qui vous ont été fournis. 
 
+ Suivi de la disponibilité des modèles [ici](https://status.lab.sspcloud.fr/).
+
  --- 
 
 
